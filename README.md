@@ -1,4 +1,7 @@
 # JobLens — Job Discovery Platform
+<p align="center">
+  <img src="./JobLensLogoF.png" width="200">
+</p>
 
 JobLens is a full-stack job discovery platform that aggregates job postings from multiple sources into a centralized dashboard. It uses a custom data ingestion pipeline to **scrape, parse, normalize, validate, deduplicate, and store** job data in PostgreSQL.
 
@@ -20,6 +23,10 @@ JobLens is a full-stack job discovery platform that aggregates job postings from
 * Stores job data in PostgreSQL
 * FastAPI endpoints for ingestion and job retrieval
 * React dashboard displaying company, location, salary, experience, posting date, source, and logos
+
+<p align="center">
+  <img src="./JobLensDemo.PNG" width="1000">
+</p>
 
 ## Architecture
 
