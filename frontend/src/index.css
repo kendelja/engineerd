@@ -377,6 +377,40 @@ button:disabled {
     margin-left: 25px;
 }
 
+.posted-badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.posted-today {
+    background: #e8f1ff;
+    color: #2563eb;
+}
+
+.posted-yesterday {
+    background: #f0f4f8;
+    color: #475569;
+}
+
+.posted-recent {
+    background: #f5f7fa;
+    color: #64748b;
+}
+
+.posted-older {
+    padding: 0;
+    background: transparent;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
 .salary {
     color: #343438;
 

@@ -64,7 +64,10 @@ function Dashboard() {
 
     function formatPostedTime(postedAt) {
         if (!postedAt) {
-            return "Unknown";
+            return {
+                text: "Unknown",
+                type: "unknown"
+            };
         }
 
         const postedDate = new Date(postedAt);
@@ -76,40 +79,39 @@ function Dashboard() {
             postedDate.getDate() === now.getDate();
 
         if (sameDay) {
-            return "Today";
+            return {
+                text: "Today",
+                type: "today"
+            };
         }
 
-        const seconds = Math.floor(
-            (now - postedDate) / 1000
-        );
-
+        const seconds = Math.floor((now - postedDate) / 1000);
         const minutes = Math.floor(seconds / 60);
-
-        if (minutes < 60) {
-            return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
-        }
-
         const hours = Math.floor(minutes / 60);
-
-        if (hours < 24) {
-            return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-        }
-
         const days = Math.floor(hours / 24);
 
         if (days === 1) {
-            return "Yesterday";
+            return {
+                text: "Yesterday",
+                type: "yesterday"
+            };
         }
 
-        if (days < 7) {
-            return `${days} days ago`;
+        if (days >= 2 && days <= 6) {
+            return {
+                text: `${days} days ago`,
+                type: "recent"
+            };
         }
 
-        return postedDate.toLocaleDateString("en-CA", {
-            year: "numeric",
-            month: "short",
-            day: "numeric"
-        });
+        return {
+            text: postedDate.toLocaleDateString("en-CA", {
+                year: "numeric",
+                month: "short",
+                day: "numeric"
+            }),
+            type: "older"
+        };
     }
     
     const filteredJobs = jobs.filter((job) => {
@@ -279,18 +281,18 @@ function Dashboard() {
                                                 {job.remote_type}
                                             </span>
                                         )}
-
-                                        {job.posted_at && (
-                                            <span>
-                                                {formatPostedTime(job.posted_at)}
-                                            </span>
-                                        )}
                                     </div>
 
                                 </div>
 
 
                                 <div className="job-right">
+
+                                    <span
+                                        className={`posted-badge posted-${formatPostedTime(job.posted_at).type}`}
+                                    >
+                                        {formatPostedTime(job.posted_at).text}
+                                    </span>
 
                                     {job.salary_min && (
                                         <div className="salary">
