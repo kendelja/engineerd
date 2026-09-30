@@ -38,6 +38,30 @@ class BuiltInParser:
             return now - timedelta(days=value)
         return None
 
+    def parse_salary(self, salary_text: str | None):
+        if not salary_text:
+            return None, None
+
+        values = re.findall(r"[\d,.]+", salary_text)
+
+        if not values:
+            return None, None
+
+        numbers = []
+
+        for value in values:
+            number = float(value.replace(",", ""))
+
+            if "k" in salary_text.lower():
+                number *= 1000
+
+            numbers.append(number)
+
+        if len(numbers) >= 2:
+            return numbers[0], numbers[1]
+
+        return numbers[0], None
+
     # ---------------------------------------------------------
     # Main parser
     # ---------------------------------------------------------
@@ -74,12 +98,20 @@ class BuiltInParser:
             # -------------------------------------------------
             # Salary
             # -------------------------------------------------
-            salary_element = card.select_one(".fa-sack-dollar")
-            if salary_element:
-                salary_container = salary_element.parent.parent
-                salary = salary_container.get_text(strip=True)
-            else:
-                salary = None
+            salary_elements = card.select(
+                "span.font-barlow.text-gray-04"
+            )
+
+            salary = None
+
+            for element in salary_elements:
+                text = element.get_text(" ", strip=True)
+
+                if re.search(r"\d", text):
+                    salary = text
+                    break
+
+            salary_min, salary_max = self.parse_salary(salary)
             # -------------------------------------------------
             # Experience level
             # -------------------------------------------------
@@ -144,7 +176,8 @@ class BuiltInParser:
                     "url": url,
                     "location": location,
                     "remote": remote,
-                    "salary": salary,
+                    "salary_min": salary_min,
+                    "salary_max": salary_max,
                     "experience": experience,
                     "description": description,
                     "posted_at": posted_at,

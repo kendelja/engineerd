@@ -6,6 +6,7 @@ function Dashboard() {
     const [search, setSearch] = useState("");
     const [remoteFilter, setRemoteFilter] = useState("all");
     const [sourceFilter, setSourceFilter] = useState("all");
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         async function loadJobs() {
@@ -29,22 +30,35 @@ function Dashboard() {
     }, []);
 
     async function handleRefresh() {
-        try {
-            await fetch("http://localhost:8000/jobs/ingest", {
-                method: "POST",
-            });
+        setIsRefreshing(true);
 
-            const response = await fetch("http://localhost:8000/jobs/");
+        try {
+            const ingestResponse = await fetch(
+                "http://localhost:8000/jobs/ingest",
+                {
+                    method: "POST",
+                }
+            );
+
+            if (!ingestResponse.ok) {
+                throw new Error("Failed to ingest jobs");
+            }
+
+            const response = await fetch(
+                "http://localhost:8000/jobs/"
+            );
 
             if (!response.ok) {
                 throw new Error("Failed to fetch jobs");
             }
 
             const data = await response.json();
-
             setJobs(data);
+
         } catch (error) {
             console.error("Unable to update jobs:", error);
+        } finally {
+            setIsRefreshing(false);
         }
     }
 
@@ -56,13 +70,18 @@ function Dashboard() {
         const postedDate = new Date(postedAt);
         const now = new Date();
 
+        const sameDay =
+            postedDate.getFullYear() === now.getFullYear() &&
+            postedDate.getMonth() === now.getMonth() &&
+            postedDate.getDate() === now.getDate();
+
+        if (sameDay) {
+            return "Today";
+        }
+
         const seconds = Math.floor(
             (now - postedDate) / 1000
         );
-
-        if (seconds < 60) {
-            return `${seconds} second${seconds === 1 ? "" : "s"} ago`;
-        }
 
         const minutes = Math.floor(seconds / 60);
 
@@ -116,10 +135,11 @@ function Dashboard() {
         <div className="app">
 
             <header className="topbar">
-                <div>
-                    <div className="logo">JobLens</div>
-                    <p>Find better jobs, faster.</p>
-                </div>
+                <img
+                    src="/JobLensLogo.svg"
+                    alt="JobLens"
+                    className="logo"
+                />
 
                 <div className="job-count">
                     {filteredJobs.length} jobs
@@ -130,10 +150,9 @@ function Dashboard() {
             <main className="dashboard">
 
                 <section className="hero">
-                    {/* <h1>Discover your next opportunity.</h1> */}
-
+                    <h1>One search. Multiple job sources.</h1>
                     <p>
-                        Search jobs from multiple sources in one place.
+                        JobLens brings job postings from across the web into one searchable dashboard.
                     </p>
                 </section>
 
@@ -189,8 +208,18 @@ function Dashboard() {
                         </option>
                     </select>
 
-                    <button onClick={handleRefresh}>
-                        Find New Jobs
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                    >
+                        {isRefreshing ? (
+                            <>
+                                <span className="spinner"></span>
+                                Finding Jobs...
+                            </>
+                        ) : (
+                            "Find New Jobs"
+                        )}
                     </button>
 
                 </section>
@@ -241,7 +270,7 @@ function Dashboard() {
                                     <div className="job-meta">
                                         {job.location && (
                                             <span>
-                                                📍 {job.location}
+                                                {job.location}
                                             </span>
                                         )}
 

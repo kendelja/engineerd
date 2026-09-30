@@ -24,5 +24,13 @@ V1.2 - Expanded multi-source ingestion and improved scraping
 
 
 TODO: - Gather 1-2 more sites 
-      - Better filtering (Location filter doesnt work, experience)
+      - Better filtering (Location filter doesnt work, add sort by newest, experience)
       - Will I add AI to this so it can find me best matched jobs? (No linkedin premium fees)
+
+TODO: SEPT 29 MOST RECENT
+     Im lost on scraping jobs from USA and Canada, obviously I want to be able to have 
+     people look in USA but the US jobs are filling the whole DB and barely any canada
+     jobs exist now, so either I need to for right now just do canada only then decide 
+     how to work in US jobs or I need to take in a lot more jobs and just hope with
+     filtering theres still a lot of CAN jobs which seems unlikely. Third thing could be
+     set a cap on each country so we can have 100 newest CAN and 100 newest US jobs.      

@@ -52,6 +52,30 @@ class WellfoundParser:
 
         return None
 
+    def parse_salary(self, salary_text: str | None):
+        if not salary_text:
+            return None, None
+
+        values = re.findall(r"\$([\d,.]+)k?", salary_text.lower())
+
+        if not values:
+            return None, None
+
+        numbers = [
+            float(value.replace(",", ""))
+            for value in values
+        ]
+
+        numbers = [
+            value * 1000 if value < 1000 else value
+            for value in numbers
+        ]
+
+        if len(numbers) >= 2:
+            return numbers[0], numbers[1]
+
+        return numbers[0], None
+
     def parse(self, html: str) -> list[dict]:
         soup = BeautifulSoup(html, "html.parser")
         jobs = []
@@ -131,6 +155,9 @@ class WellfoundParser:
                         if "remote" in text.lower():
                             remote_type = True
 
+                # Convert salary string into database-ready values
+                salary_min, salary_max = self.parse_salary(salary)
+
                 # -----------------------------------
                 # EXPERIENCE
                 # -----------------------------------
@@ -202,8 +229,9 @@ class WellfoundParser:
                         "company_logo": company_logo,
                         "url": url,
                         "location": location,
-                        "remote": remote_type,
-                        "salary": salary,
+                        "remote_type": remote_type,
+                        "salary_min": salary_min,
+                        "salary_max": salary_max,
                         "experience": experience,
                         "description": description,
                         "posted_at": posted_at,
