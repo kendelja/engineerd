@@ -9,16 +9,15 @@ from app.ingestion.scrapers.WellfoundScraper import WellfoundScraper
 from app.ingestion.parsers.WellfoundParser import WellfoundParser
 
 
-async def main():
-
+async def main(market="canada"):
     await run_pipeline(
-        BuiltInScraper(),
+        BuiltInScraper(market=market),
         BuiltInParser(),
         "Built In"
     )
 
     await run_pipeline(
-        WellfoundScraper(),
+        WellfoundScraper(market=market),
         WellfoundParser(),
         "Wellfound"
     )

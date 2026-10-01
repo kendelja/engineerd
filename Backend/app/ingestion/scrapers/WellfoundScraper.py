@@ -5,17 +5,31 @@ class WellfoundScraper:
 
     BASE_URL = "https://wellfound.com"
 
-    # Multiple Wellfound feeds for broader software/tech coverage
-    JOB_URLS = [
-        "/role/l/engineer/north-america",
-        "/role/l/developer/north-america",
-    ]
+    JOB_URLS = {
+        "canada": [
+            "/role/l/engineer/canada-startups",
+            "/role/l/developer/canada-startups",
+        ],
 
-    def __init__(self, headless=True):
+        "usa": [
+            "/role/l/engineer/united-states",
+            "/role/l/developer/united-states",
+        ],
+
+        "north-america": [
+            "/role/l/engineer/north-america",
+            "/role/l/developer/north-america",
+        ],
+    }
+
+    def __init__(self, market="canada", headless=True):
+        self.market = market
         self.headless = headless
 
     async def fetch_jobs_page(self) -> str:
         pages = []
+
+        urls = self.JOB_URLS[self.market]
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(
@@ -25,10 +39,13 @@ class WellfoundScraper:
             page = await browser.new_page()
 
             try:
-                for path in self.JOB_URLS:
+                for path in urls:
                     url = f"{self.BASE_URL}{path}"
 
-                    print(f"Fetching Wellfound: {url}")
+                    print(
+                        f"Fetching Wellfound "
+                        f"({self.market}): {url}"
+                    )
 
                     await page.goto(
                         url,
@@ -39,6 +56,7 @@ class WellfoundScraper:
                     await page.wait_for_timeout(2000)
 
                     html = await page.content()
+
                     pages.append(html)
 
                     print("Page downloaded.")

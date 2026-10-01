@@ -118,3 +118,15 @@ def get_jobs(limit=100):
 
     finally:
         connection.close()
+
+def clear_jobs():
+    connection = get_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM jobs")
+
+        connection.commit()
+
+    finally:
+        connection.close()

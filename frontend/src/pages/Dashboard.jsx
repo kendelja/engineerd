@@ -7,6 +7,16 @@ function Dashboard() {
     const [remoteFilter, setRemoteFilter] = useState("all");
     const [sourceFilter, setSourceFilter] = useState("all");
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [market, setMarket] = useState("canada");
+
+    const [savedJobs, setSavedJobs] = useState(() => {
+    const saved = localStorage.getItem("joblens-saved-jobs");
+    return saved ? JSON.parse(saved) : [];
+    });
+
+    const [showSaved, setShowSaved] = useState(false);
+
+    
 
     useEffect(() => {
         async function loadJobs() {
@@ -34,7 +44,7 @@ function Dashboard() {
 
         try {
             const ingestResponse = await fetch(
-                "http://localhost:8000/jobs/ingest",
+                `http://localhost:8000/jobs/ingest?market=${market}`,
                 {
                     method: "POST",
                 }
@@ -73,33 +83,39 @@ function Dashboard() {
         const postedDate = new Date(postedAt);
         const now = new Date();
 
-        const sameDay =
-            postedDate.getFullYear() === now.getFullYear() &&
-            postedDate.getMonth() === now.getMonth() &&
-            postedDate.getDate() === now.getDate();
+        const postedDay = new Date(
+            postedDate.getFullYear(),
+            postedDate.getMonth(),
+            postedDate.getDate()
+        );
 
-        if (sameDay) {
+        const today = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate()
+        );
+
+        const dayDifference = Math.round(
+            (today - postedDay) / (1000 * 60 * 60 * 24)
+        );
+
+        if (dayDifference === 0) {
             return {
                 text: "Today",
                 type: "today"
             };
         }
 
-        const seconds = Math.floor((now - postedDate) / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
-
-        if (days === 1) {
+        if (dayDifference === 1) {
             return {
                 text: "Yesterday",
                 type: "yesterday"
             };
         }
 
-        if (days >= 2 && days <= 6) {
+        if (dayDifference >= 2 && dayDifference <= 6) {
             return {
-                text: `${days} days ago`,
+                text: `${dayDifference} days ago`,
                 type: "recent"
             };
         }
@@ -113,7 +129,28 @@ function Dashboard() {
             type: "older"
         };
     }
-    
+
+    function toggleSaved(jobId) {
+        setSavedJobs((current) => {
+            const isSaved = current.includes(jobId);
+
+            const updated = isSaved
+                ? current.filter((id) => id !== jobId)
+                : [...current, jobId];
+
+            localStorage.setItem(
+                "joblens-saved-jobs",
+                JSON.stringify(updated)
+            );
+
+            return updated;
+        });
+    }
+
+    function isJobSaved(jobId) {
+        return savedJobs.includes(jobId);
+    }
+
     const filteredJobs = jobs.filter((job) => {
         const searchText = search.toLowerCase();
 
@@ -129,7 +166,15 @@ function Dashboard() {
             sourceFilter === "all" ||
             job.source?.toLowerCase() === sourceFilter;
 
-        return matchesSearch && matchesRemote && matchesSource;
+        const matchesSaved =
+            !showSaved || savedJobs.includes(job.id);
+
+        return (
+            matchesSearch &&
+            matchesRemote &&
+            matchesSource &&
+            matchesSaved
+        );
     });
 
 
@@ -159,71 +204,85 @@ function Dashboard() {
                 </section>
 
 
-                <section className="filters">
+                <section className="search-panel">
+                    <div className="market-selector">
+                        <div className="market-label">
+                            <span>SEARCH MARKET</span>
+                            <small>Choose where you want to find jobs</small>
+                        </div>
 
-                    <div className="search-wrapper">
-                        <span>⌕</span>
+                        <div className="market-options">
+                            <button
+                                className={market === "canada" ? "active" : ""}
+                                onClick={() => setMarket("canada")}
+                            >
+                                <span className="market-flag">CA</span>
+                                <span>Canada</span>
+                            </button>
 
-                        <input
-                            type="text"
-                            placeholder="Search jobs or companies..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+                            <button
+                                className={market === "usa" ? "active" : ""}
+                                onClick={() => setMarket("usa")}
+                            >
+                                <span className="market-flag">US</span>
+                                <span>United States</span>
+                            </button>
+
+                            <button
+                                className={market === "north-america" ? "active" : ""}
+                                onClick={() => setMarket("north-america")}
+                            >
+                                <span className="market-flag">NA</span>
+                                <span>North America</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <select
-                        value={remoteFilter}
-                        onChange={(e) => setRemoteFilter(e.target.value)}
-                    >
-                        <option value="all">
-                            All locations
-                        </option>
+                    <div className="filter-row">
+                        <div className="search-wrapper">
+                            <span>⌕</span>
+                            <input
+                                type="text"
+                                placeholder="Search jobs or companies..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
 
-                        <option value="remote">
-                            Remote
-                        </option>
+                        <select
+                            value={remoteFilter}
+                            onChange={(e) => setRemoteFilter(e.target.value)}
+                        >
+                            <option value="all">All locations</option>
+                            <option value="remote">Remote</option>
+                            <option value="remote only">Remote only</option>
+                            <option value="on-site">On-site</option>
+                        </select>
 
-                        <option value="remote only">
-                            Remote only
-                        </option>
+                        <select
+                            value={sourceFilter}
+                            onChange={(e) => setSourceFilter(e.target.value)}
+                        >
+                            <option value="all">All sources</option>
+                            <option value="builtin">Built In</option>
+                            <option value="wellfound">Wellfound</option>
+                        </select>
 
-                        <option value="on-site">
-                            On-site
-                        </option>
-                    </select>
-
-                    <select
-                        value={sourceFilter}
-                        onChange={(e) => setSourceFilter(e.target.value)}
-                    >
-                        <option value="all">
-                            All sources
-                        </option>
-
-                        <option value="builtin">
-                            Built In
-                        </option>
-
-                        <option value="wellfound">
-                            Wellfound
-                        </option>
-                    </select>
-
-                    <button
-                        onClick={handleRefresh}
-                        disabled={isRefreshing}
-                    >
-                        {isRefreshing ? (
-                            <>
-                                <span className="spinner"></span>
-                                Finding Jobs...
-                            </>
-                        ) : (
-                            "Find New Jobs"
-                        )}
-                    </button>
-
+                        <button
+                            className="find-jobs-button"
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                        >
+                            {isRefreshing ? (
+                                <>
+                                    <span className="spinner"></span>
+                                    Finding Jobs...
+                                </>
+                            ) : (
+                                "Find New Jobs"
+                            )}
+                        </button>
+                    </div>
                 </section>
 
 
@@ -231,6 +290,27 @@ function Dashboard() {
                     <span>
                         {filteredJobs.length} matching jobs
                     </span>
+
+                    <div className="saved-toggle">
+                        <button
+                            className={!showSaved ? "active" : ""}
+                            onClick={() => setShowSaved(false)}
+                        >
+                            All Jobs
+                        </button>
+
+                        <button
+                            className={showSaved ? "active" : ""}
+                            onClick={() => setShowSaved(true)}
+                        >
+                            ♡ Saved
+                            {savedJobs.length > 0 && (
+                                <span className="saved-count">
+                                    {savedJobs.length}
+                                </span>
+                            )}
+                        </button>
+                    </div>
                 </div>
 
 
@@ -238,13 +318,8 @@ function Dashboard() {
 
                     {filteredJobs.map((job) => (
 
-                        <article
-                            className="job-card"
-                            key={job.id}
-                        >
-
+                        <article className="job-card" key={job.id}>
                             <div className="company-logo">
-
                                 {job.company_logo ? (
                                     <img
                                         src={job.company_logo}
@@ -255,14 +330,10 @@ function Dashboard() {
                                         {job.company?.charAt(0)}
                                     </span>
                                 )}
-
                             </div>
 
-
                             <div className="job-content">
-
                                 <div className="job-main">
-
                                     <h2>{job.title}</h2>
 
                                     <div className="company">
@@ -271,9 +342,7 @@ function Dashboard() {
 
                                     <div className="job-meta">
                                         {job.location && (
-                                            <span>
-                                                {job.location}
-                                            </span>
+                                            <span>{job.location}</span>
                                         )}
 
                                         {job.remote_type && (
@@ -282,12 +351,9 @@ function Dashboard() {
                                             </span>
                                         )}
                                     </div>
-
                                 </div>
 
-
                                 <div className="job-right">
-
                                     <span
                                         className={`posted-badge posted-${formatPostedTime(job.posted_at).type}`}
                                     >
@@ -296,28 +362,40 @@ function Dashboard() {
 
                                     {job.salary_min && (
                                         <div className="salary">
-
-                                            ${Math.round(
-                                                job.salary_min / 1000
-                                            )}k
-
+                                            ${Math.round(job.salary_min / 1000)}k
                                             {job.salary_max &&
                                                 ` – $${Math.round(
                                                     job.salary_max / 1000
                                                 )}k`
                                             }
-
                                         </div>
                                     )}
 
                                     <span className="source">
                                         {job.source}
                                     </span>
-
                                 </div>
-
                             </div>
 
+                            <button
+                                className={`save-job ${
+                                    isJobSaved(job.id) ? "saved" : ""
+                                }`}
+                                onClick={() => toggleSaved(job.id)}
+                                aria-label={
+                                    isJobSaved(job.id)
+                                        ? "Remove saved job"
+                                        : "Save job"
+                                }
+                            >
+                                <span className="save-icon">
+                                    {isJobSaved(job.id) ? "♥" : "♡"}
+                                </span>
+
+                                <span className="save-text">
+                                    {isJobSaved(job.id) ? "Saved" : "Save"}
+                                </span>
+                            </button>
 
                             <a
                                 className="view-job"
@@ -325,11 +403,10 @@ function Dashboard() {
                                 target="_blank"
                                 rel="noreferrer"
                             >
-                                →
+                                <span>View Job</span>
+                                <span className="view-arrow">→</span>
                             </a>
-
                         </article>
-
                     ))}
 
                 </section>

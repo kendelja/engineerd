@@ -3,13 +3,13 @@ JobLens - Jace Kendel
 V1.0 - Setup backend, API, and frontend
      - Setup PostgreSQL DB for holding job posting property data
      - Identified job posting sites to scrape from (BuiltIn, Wellfound for now)
-     - Created Scraping and parsing files for each site, utilized for data ingestion
-     - Utilized pipeline, normalizer, dedeuplicator and validator to ensure cleanliness and checks
+     - Created scraping and parsing files for each site, utilized for data ingestion
+     - Utilized pipeline, normalizer, deduplicator and validator to ensure cleanliness and checks
      - Successfully connected backend and frontend and displayed data on frontend
-     - Modernized frontend (Better layout, filtering, company logos, source)
+     - Modernized frontend (better layout, filtering, company logos, source)
 
-V1.1  - Fixed job URL links to allow apply button to work
-     - Fixed location for Wellfound jobs being a salary value instead of loc
+V1.1 - Fixed job URL links to allow apply button to work
+     - Fixed location for Wellfound jobs being a salary value instead of location
      - Got some of Remote type working - switched it to bool value, but logic is wrong
           (all fields are false rn), if T/F then filter works for remote and can just display
           remote attribute on job card on JobLens
@@ -22,15 +22,39 @@ V1.2 - Expanded multi-source ingestion and improved scraping
      - Cleaned and organized Built In and Wellfound parser code for maintainability
      - Debugged and verified the full ingestion flow from scraping through PostgreSQL storage
 
+V1.3 - Improved data quality and ingestion reliability
+     - Added 30-day freshness filter to prevent outdated job postings from being stored
+     - Added handling for invalid and expired postings during ingestion
+     - Improved ingestion logging with inserted, skipped, invalid, and expired job counts
+     - Improved salary parsing and normalized salary values for database storage
+     - Fixed Built In CSS selectors and parsing issues
+     - Improved job retrieval ordering to display newest postings first using posting date
 
-TODO: - Gather 1-2 more sites 
-      - Better filtering (Location filter doesnt work, add sort by newest, experience)
-      - Will I add AI to this so it can find me best matched jobs? (No linkedin premium fees)
+V1.4 - Added market-based job searching
+     - Added Canada, United States, and North America market selection
+     - Updated ingestion pipeline to pass the selected market to each scraper
+     - Added market-specific Built In feeds for Canada and the United States
+     - Added North America support by combining Canadian and United States Built In feeds
+     - Added market-specific Wellfound feeds for Canada, United States, and North America
+     - Updated FastAPI ingestion endpoint to accept and validate the selected market
+     - Updated frontend to allow users to select a search market before finding jobs
 
-TODO: SEPT 29 MOST RECENT
-     Im lost on scraping jobs from USA and Canada, obviously I want to be able to have 
-     people look in USA but the US jobs are filling the whole DB and barely any canada
-     jobs exist now, so either I need to for right now just do canada only then decide 
-     how to work in US jobs or I need to take in a lot more jobs and just hope with
-     filtering theres still a lot of CAN jobs which seems unlikely. Third thing could be
-     set a cap on each country so we can have 100 newest CAN and 100 newest US jobs.      
+V1.5 - Refined JobLens frontend and job discovery workflow
+     - Added "Find New Jobs" workflow to trigger ingestion on demand
+     - Added saved jobs functionality using local browser storage
+     - Added All Jobs / Saved Jobs filtering
+     - Added improved job card interactions with Save and View Job actions
+     - Added posting-time labels such as Today, Yesterday, and days ago
+     - Improved frontend styling, spacing, cards, filters, buttons, and responsive layout
+     - Added visual loading state while new jobs are being ingested
+     - Updated database workflow to clear previous search results when switching markets
+     - Improved overall frontend organization and usability
+
+TODO: - Fix some blank, 0-0k, etc salary edge cases
+      - Also with salary, if no salary listed, do I leave blank or put note to user of no salary listed
+      - Add more concise experience divided ingestion (Ex. Seeing almost no junior roles right now, could have just junior ingestion, or multiple selectors for experience ingestion, would need more URLs to scrape)
+      - Fix remote filter just crashing site
+      - Some job cards have a blank shape beside experience text, prob due to scraping problems with breaks (or emojis or colons) in between info on external job cards
+      - Potentially change UI to have H1, H2 to left of main job search to make it more prominent
+      - Consider changing project name as I have geared towards only SWE/Dev jobs not all jobs
+      
