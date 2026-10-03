@@ -1,9 +1,9 @@
-# JobLens — Job Discovery Platform
+# Engineerd — Job Discovery Platform
 <p align="center">
-  <img src="./JobLensLogoF.png" width="200">
+  <img src="./EngineerdBanner.png"">
 </p>
 
-JobLens is a full-stack job discovery platform that aggregates job postings from multiple sources into a centralized dashboard. It uses a custom data ingestion pipeline to **scrape, parse, normalize, validate, deduplicate, and store** job data in PostgreSQL.
+Engineerd is a full-stack job discovery platform that aggregates job postings from multiple sources into a centralized dashboard. It uses a custom data ingestion pipeline to **scrape, parse, normalize, validate, deduplicate, and store** job data in PostgreSQL.
 
 ## Tech Stack
 
@@ -25,7 +25,7 @@ JobLens is a full-stack job discovery platform that aggregates job postings from
 * React dashboard displaying company, location, salary, experience, posting date, source, and logos
 
 <p align="center">
-  <img src="./JobLensDemo.PNG" width="1000">
+  <img src="./EngineerdDemo.PNG" width="1000">
 </p>
 
 ## Architecture
@@ -55,7 +55,7 @@ The ingestion system uses **source-specific scrapers and parsers with a shared p
 ## Project Structure
 
 ```
-joblens/
+engineerd/
 ├── backend/
 │   └── app/
 │       ├── api/
@@ -85,4 +85,4 @@ joblens/
 
 ## Why I Built It
 
-JobLens was built to reduce the noise of traditional job searches while providing a practical project for **full-stack development, web scraping, data engineering, and API development**. It also provides a foundation for future automated job relevance and AI-assisted matching.
+Engineerd was built to reduce the noise of traditional job searches while providing a practical project for **full-stack development, web scraping, data engineering, and API development**. It also provides a foundation for future automated job relevance and AI-assisted matching.
