@@ -8,6 +8,9 @@ from app.ingestion.parsers.BuiltInParser import BuiltInParser
 from app.ingestion.scrapers.WellfoundScraper import WellfoundScraper
 from app.ingestion.parsers.WellfoundParser import WellfoundParser
 
+from app.ingestion.scrapers.JobBankScraper import JobBankScraper
+from app.ingestion.parsers.JobBankParser import JobBankParser
+
 
 async def main(market="canada"):
     await run_pipeline(
@@ -21,6 +24,14 @@ async def main(market="canada"):
         WellfoundParser(),
         "Wellfound"
     )
+
+     # Job Bank is Canada-only.
+    if market == "canada":
+        await run_pipeline(
+            JobBankScraper(market=market),
+            JobBankParser(),
+            "Job Bank"
+        )
 
 
 if __name__ == "__main__":

@@ -12,89 +12,188 @@ class BuiltInParser:
     def parse_posted_time(self, posted_text: str | None):
         if not posted_text:
             return None
+
         text = posted_text.lower().strip()
         now = datetime.now()
-        # Remove "reposted" so we can parse the remaining time.
+
         text = text.replace("reposted", "").strip()
-        # Special cases
+
         if "yesterday" in text:
             return now - timedelta(days=1)
+
         if "an hour" in text:
             return now - timedelta(hours=1)
+
         if "a minute" in text or "an minute" in text:
             return now - timedelta(minutes=1)
-        # Numeric relative times
+
         match = re.search(r"\d+", text)
+
         if not match:
             return None
+
         value = int(match.group())
+
         if "second" in text:
             return now - timedelta(seconds=value)
+
         if "minute" in text:
             return now - timedelta(minutes=value)
+
         if "hour" in text:
             return now - timedelta(hours=value)
+
         if "day" in text:
             return now - timedelta(days=value)
+
         return None
 
+    # ---------------------------------------------------------
+    # Helper: Parse salary
+    # ---------------------------------------------------------
     def parse_salary(self, salary_text: str | None):
         if not salary_text:
-            return None, None
+            return None, None, None
 
-        values = re.findall(r"[\d,.]+", salary_text)
+        text = salary_text.lower().strip()
+
+        values = re.findall(r"[\d,.]+", text)
 
         if not values:
-            return None, None
+            return None, None, None
 
         numbers = []
 
         for value in values:
             number = float(value.replace(",", ""))
 
-            if "k" in salary_text.lower():
+            if "k" in text:
                 number *= 1000
 
             numbers.append(number)
 
-        if len(numbers) >= 2:
-            return numbers[0], numbers[1]
+        salary_period = None
 
-        return numbers[0], None
+        if "hour" in text:
+            salary_period = "hourly"
+
+        elif "day" in text:
+            salary_period = "daily"
+
+        elif "month" in text:
+            salary_period = "monthly"
+
+        elif "year" in text or "annual" in text:
+            salary_period = "annually"
+
+        if len(numbers) >= 2:
+            return numbers[0], numbers[1], salary_period
+
+        return numbers[0], None, salary_period
+
+    # ---------------------------------------------------------
+    # Helper: Determine whether job is relevant
+    # ---------------------------------------------------------
+    def is_relevant_job(self, title: str | None, description: str | None):
+        if not title:
+            return False
+
+        title_lower = title.lower()
+
+        # Clearly non-software engineering roles that Built In
+        # sometimes places under its general Engineering category.
+        excluded_title_terms = [
+            "toolmaker",
+            "manufacturing engineer",
+            "manufacturing process engineer",
+            "mechanical engineer",
+            "electrical engineer",
+            "civil engineer",
+            "industrial engineer",
+            "quality engineer",
+            "process engineer",
+            "chemical engineer",
+            "automotive engineer",
+            "aerospace engineer",
+            "structural engineer",
+        ]
+
+        for term in excluded_title_terms:
+            if term in title_lower:
+                return False
+
+        return True
 
     # ---------------------------------------------------------
     # Main parser
     # ---------------------------------------------------------
     def parse(self, html: str) -> list[dict]:
         soup = BeautifulSoup(html, "html.parser")
+
         jobs = []
+
         # Each Built In job is contained in a job card.
         job_cards = soup.select('[data-id="job-card"]')
+
         for card in job_cards:
+
             # -------------------------------------------------
             # Basic job information
             # -------------------------------------------------
-            title_element = card.select_one('[data-id="job-card-title"]')
-            company_element = card.select_one('[data-id="company-title"]')
-            link_element = card.select_one('[data-id="job-card-title"]')
+            title_element = card.select_one(
+                '[data-id="job-card-title"]'
+            )
+
+            company_element = card.select_one(
+                '[data-id="company-title"]'
+            )
+
+            link_element = card.select_one(
+                '[data-id="job-card-title"]'
+            )
+
+            title = (
+                title_element.get_text(strip=True)
+                if title_element
+                else None
+            )
+
             # -------------------------------------------------
             # Location
             # -------------------------------------------------
-            location_element = card.select_one(".fa-location-dot")
+            location_element = card.select_one(
+                ".fa-location-dot"
+            )
+
             if location_element:
-                location_container = location_element.parent.parent
-                location = location_container.get_text(strip=True)
+                location_container = (
+                    location_element.parent.parent
+                )
+
+                location = location_container.get_text(
+                    strip=True
+                )
             else:
                 location = None
+
             # -------------------------------------------------
             # Remote / onsite
             # -------------------------------------------------
-            remote_element = card.select_one(".fa-house-building")
+            remote_element = card.select_one(
+                ".fa-house-building"
+            )
+
             if remote_element:
-                remote_container = remote_element.parent.parent
-                remote = remote_container.get_text(strip=True)
+                remote_container = (
+                    remote_element.parent.parent
+                )
+
+                remote = remote_container.get_text(
+                    strip=True
+                )
             else:
                 remote = None
+
             # -------------------------------------------------
             # Salary
             # -------------------------------------------------
@@ -107,56 +206,118 @@ class BuiltInParser:
             for element in salary_elements:
                 text = element.get_text(" ", strip=True)
 
-                if re.search(r"\d", text):
+                if re.search(
+                    r"\d+(?:\.\d+)?K?\s*-\s*\d+(?:\.\d+)?K?"
+                    r"\s*(?:Hourly|Daily|Monthly|Annually|Annual|Yearly)",
+                    text,
+                    re.IGNORECASE
+                ):
                     salary = text
                     break
 
-            salary_min, salary_max = self.parse_salary(salary)
+                if re.search(
+                    r"\d+(?:\.\d+)?K?\s*"
+                    r"(?:Hourly|Daily|Monthly|Annually|Annual|Yearly)",
+                    text,
+                    re.IGNORECASE
+                ):
+                    salary = text
+                    break
+
+            salary_min, salary_max, salary_period = self.parse_salary(
+                salary
+            )
+
             # -------------------------------------------------
             # Experience level
             # -------------------------------------------------
-            experience_element = card.select_one(".fa-trophy")
+            experience_element = card.select_one(
+                ".fa-trophy"
+            )
+
             if experience_element:
-                experience_container = experience_element.parent.parent
-                experience = experience_container.get_text(strip=True)
+                experience_container = (
+                    experience_element.parent.parent
+                )
+
+                experience = experience_container.get_text(
+                    strip=True
+                )
             else:
                 experience = None
+
             # -------------------------------------------------
             # Posted date
             # -------------------------------------------------
-            time_element = card.select_one("span.fs-xs.fw-bold.bg-gray-01")
+            time_element = card.select_one(
+                "span.fs-xs.fw-bold.bg-gray-01"
+            )
+
             if time_element:
-                posted_text = time_element.get_text(strip=True)
+                posted_text = time_element.get_text(
+                    strip=True
+                )
             else:
                 posted_text = None
-            posted_at = self.parse_posted_time(posted_text)
+
+            posted_at = self.parse_posted_time(
+                posted_text
+            )
+
             # -------------------------------------------------
             # Description
             # -------------------------------------------------
-            description_element = card.select_one(".collapse .fs-sm.fw-regular")
+            description_element = card.select_one(
+                ".collapse .fs-sm.fw-regular"
+            )
+
             description = (
-                description_element.get_text(strip=True)
+                description_element.get_text(
+                    strip=True
+                )
                 if description_element
                 else None
             )
+
+            # -------------------------------------------------
+            # Relevance filter
+            # -------------------------------------------------
+            if not self.is_relevant_job(
+                title,
+                description
+            ):
+                continue
+
             # -------------------------------------------------
             # Company logo
             # -------------------------------------------------
-            logo_element = card.select_one('[data-id="company-img"]')
-            company_logo = logo_element.get("src") if logo_element else None
+            logo_element = card.select_one(
+                '[data-id="company-img"]'
+            )
+
+            company_logo = (
+                logo_element.get("src")
+                if logo_element
+                else None
+            )
+
             # -------------------------------------------------
             # Job ID
             # -------------------------------------------------
             job_id = card.get("id")
+
             # -------------------------------------------------
             # URL
             # -------------------------------------------------
             main = "https://builtin.com"
+
             url = (
                 main + link_element.get("href")
-                if link_element and link_element.get("href")
+                if link_element
+                and link_element.get("href")
                 else main
             )
+
             # -------------------------------------------------
             # Build normalized raw job
             # -------------------------------------------------
@@ -164,11 +325,11 @@ class BuiltInParser:
                 {
                     "source": "BuiltIn",
                     "source_job_id": job_id,
-                    "title": (
-                        title_element.get_text(strip=True) if title_element else None
-                    ),
+                    "title": title,
                     "company": (
-                        company_element.get_text(strip=True)
+                        company_element.get_text(
+                            strip=True
+                        )
                         if company_element
                         else None
                     ),
@@ -178,9 +339,11 @@ class BuiltInParser:
                     "remote": remote,
                     "salary_min": salary_min,
                     "salary_max": salary_max,
+                    "salary_period": salary_period,
                     "experience": experience,
                     "description": description,
                     "posted_at": posted_at,
                 }
             )
+
         return jobs

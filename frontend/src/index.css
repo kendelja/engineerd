@@ -16,7 +16,7 @@ body {
         "Segoe UI",
         sans-serif;
 
-    background: #f5f5f7;
+    background: #fbfbfc;
     color: #18181b;
 }
 
@@ -38,14 +38,13 @@ body {
 
     padding: 0 48px;
 
-    background: #223871;
+    background: #1a66d8;
     border-bottom: 1px solid #e7e7e5;
 }
 
 .logo {
-    width: 200px;
-    height: 130px;
-
+    width: 500px;
+    height: 300px;
     display: block;
 
     object-fit: contain;

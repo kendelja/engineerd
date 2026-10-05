@@ -3,7 +3,7 @@ from app.api.jobs import router as jobs_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
-    title="JobLens API",
+    title="Engineerd API",
     version="1.0.0"
 )
 

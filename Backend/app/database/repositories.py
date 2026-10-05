@@ -26,11 +26,13 @@ def insert_job(job: Job):
                     employment_type,
                     remote_type,
                     salary_min,
-                    salary_max
+                    salary_max,
+                    salary_period
                 )
                 VALUES (
                     %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s,
+                    %s
                 )
                 ON CONFLICT (source, source_job_id)
                 DO NOTHING
@@ -49,7 +51,8 @@ def insert_job(job: Job):
                     job.employment_type,
                     job.remote_type,
                     job.salary_min,
-                    job.salary_max
+                    job.salary_max,
+                    job.salary_period
                 )
             )
         connection.commit()
@@ -78,6 +81,7 @@ def get_jobs(limit=100):
                     description,
                     salary_min,
                     salary_max,
+                    salary_period,
                     url,
                     posted_at,
                     experience_level,
@@ -104,6 +108,7 @@ def get_jobs(limit=100):
                 "description",
                 "salary_min",
                 "salary_max",
+                "salary_period",
                 "url",
                 "posted_at",
                 "experience_level",

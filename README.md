@@ -1,6 +1,6 @@
 # Engineerd — Job Discovery Platform
 <p align="center">
-  <img src="./EngineerdBanner.png"">
+  <img src="./EngineerdBanner.png" width="200">
 </p>
 
 Engineerd is a full-stack job discovery platform that aggregates job postings from multiple sources into a centralized dashboard. It uses a custom data ingestion pipeline to **scrape, parse, normalize, validate, deduplicate, and store** job data in PostgreSQL.

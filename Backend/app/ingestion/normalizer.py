@@ -36,6 +36,7 @@ def normalize_job(raw_job: dict) -> Job:
 
         salary_min=raw_job.get("salary_min"),
         salary_max=raw_job.get("salary_max"),
+        salary_period=clean_text(raw_job.get("salary_period")),
     )
 
 

@@ -24,3 +24,4 @@ class Job:
 
     salary_min: Optional[float]
     salary_max: Optional[float]
+    salary_period: Optional[str]

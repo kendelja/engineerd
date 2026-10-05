@@ -1,4 +1,4 @@
-JobLens - Jace Kendel
+Engineerd - Jace Kendel
 
 V1.0 - Setup backend, API, and frontend
      - Setup PostgreSQL DB for holding job posting property data
@@ -12,7 +12,7 @@ V1.1 - Fixed job URL links to allow apply button to work
      - Fixed location for Wellfound jobs being a salary value instead of location
      - Got some of Remote type working - switched it to bool value, but logic is wrong
           (all fields are false rn), if T/F then filter works for remote and can just display
-          remote attribute on job card on JobLens
+          remote attribute on job card on Engineerd
 
 V1.2 - Expanded multi-source ingestion and improved scraping
      - Updated Wellfound parser to extract multiple job positions from a single company card
@@ -39,7 +39,7 @@ V1.4 - Added market-based job searching
      - Updated FastAPI ingestion endpoint to accept and validate the selected market
      - Updated frontend to allow users to select a search market before finding jobs
 
-V1.5 - Refined JobLens frontend and job discovery workflow
+V1.5 - Refined Engineerd frontend and job discovery workflow
      - Added "Find New Jobs" workflow to trigger ingestion on demand
      - Added saved jobs functionality using local browser storage
      - Added All Jobs / Saved Jobs filtering
@@ -50,11 +50,21 @@ V1.5 - Refined JobLens frontend and job discovery workflow
      - Updated database workflow to clear previous search results when switching markets
      - Improved overall frontend organization and usability
 
-TODO: - Fix some blank, 0-0k, etc salary edge cases
-      - Also with salary, if no salary listed, do I leave blank or put note to user of no salary listed
+V1.6 - Expanded Job Bank ingestion and standardized salary data
+     - Added Government of Canada Job Bank as a third job posting source
+     - Built a dedicated Job Bank scraper and parser for search results and individual job postings
+     - Added concurrent Job Bank detail-page scraping to retrieve external application links
+     - Added Job Bank application URL handling using the existing job URL field
+     - Added Job Bank source logo for job cards without employer logos
+     - Added salary period tracking for hourly, daily, monthly, and annual salaries
+     - Updated salary parsing and frontend display to correctly represent different salary periods
+     - Fixed Built In salary parsing to distinguish salary values from non-salary text such as location counts
+     - Added initial Built In filtering for clearly unrelated engineering roles such as manufacturing and toolmaking
+     - Renamed the project to Engineerd to better reflect its focus on engineering, software, data, and technical job discovery
+
+TODO: - Also with salary, if no salary listed, do I leave blank or put note to user of no salary listed
       - Add more concise experience divided ingestion (Ex. Seeing almost no junior roles right now, could have just junior ingestion, or multiple selectors for experience ingestion, would need more URLs to scrape)
       - Fix remote filter just crashing site
       - Some job cards have a blank shape beside experience text, prob due to scraping problems with breaks (or emojis or colons) in between info on external job cards
       - Potentially change UI to have H1, H2 to left of main job search to make it more prominent
-      - Consider changing project name as I have geared towards only SWE/Dev jobs not all jobs
       

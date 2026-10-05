@@ -10,7 +10,7 @@ function Dashboard() {
     const [market, setMarket] = useState("canada");
 
     const [savedJobs, setSavedJobs] = useState(() => {
-    const saved = localStorage.getItem("joblens-saved-jobs");
+    const saved = localStorage.getItem("engineerd-saved-jobs");
     return saved ? JSON.parse(saved) : [];
     });
 
@@ -139,7 +139,7 @@ function Dashboard() {
                 : [...current, jobId];
 
             localStorage.setItem(
-                "joblens-saved-jobs",
+                "engineerd-saved-jobs",
                 JSON.stringify(updated)
             );
 
@@ -177,14 +177,71 @@ function Dashboard() {
         );
     });
 
+    function formatJobTitle(job) {
+        if (!job.title) return "";
+
+        if (job.source !== "Job Bank") {
+            return job.title;
+        }
+
+        const specialCases = {
+            ai: "AI",
+            api: "API",
+            apis: "APIs",
+            aws: "AWS",
+            azure: "Azure",
+            c: "C",
+            "c++": "C++",
+            "c#": "C#",
+            css: "CSS",
+            devops: "DevOps",
+            etl: "ETL",
+            gis: "GIS",
+            html: "HTML",
+            ios: "iOS",
+            it: "IT",
+            java: "Java",
+            javascript: "JavaScript",
+            js: "JS",
+            kotlin: "Kotlin",
+            ml: "ML",
+            mysql: "MySQL",
+            node: "Node",
+            "node.js": "Node.js",
+            php: "PHP",
+            postgresql: "PostgreSQL",
+            python: "Python",
+            react: "React",
+            "react.js": "React.js",
+            sql: "SQL",
+            typescript: "TypeScript",
+            ui: "UI",
+            ux: "UX",
+            vue: "Vue",
+        };
+
+        return job.title
+            .split(" ")
+            .map((word) => {
+                const key = word.toLowerCase();
+
+                if (specialCases[key]) {
+                    return specialCases[key];
+                }
+
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            })
+            .join(" ");
+    }
+
 
     return (
         <div className="app">
 
             <header className="topbar">
                 <img
-                    src="/JobLensLogo.svg"
-                    alt="JobLens"
+                    src="/EngineerdLogoWhite.svg"
+                    alt="Engineerd"
                     className="logo"
                 />
 
@@ -199,7 +256,7 @@ function Dashboard() {
                 <section className="hero">
                     <h1>One search. Multiple job sources.</h1>
                     <p>
-                        JobLens brings job postings from across the web into one searchable dashboard.
+                        Engineerd brings job postings from across the web into one searchable dashboard.
                     </p>
                 </section>
 
@@ -334,7 +391,7 @@ function Dashboard() {
 
                             <div className="job-content">
                                 <div className="job-main">
-                                    <h2>{job.title}</h2>
+                                    <h2>{formatJobTitle(job)}</h2>
 
                                     <div className="company">
                                         {job.company}
@@ -362,12 +419,40 @@ function Dashboard() {
 
                                     {job.salary_min && (
                                         <div className="salary">
-                                            ${Math.round(job.salary_min / 1000)}k
-                                            {job.salary_max &&
-                                                ` – $${Math.round(
-                                                    job.salary_max / 1000
-                                                )}k`
-                                            }
+                                            {job.salary_period ? (
+                                                <>
+                                                    {job.salary_period === "annually"
+                                                        ? `$${Math.round(job.salary_min / 1000)}k`
+                                                        : `$${job.salary_min.toLocaleString()}`
+                                                    }
+
+                                                    {job.salary_max &&
+                                                        (
+                                                            job.salary_period === "annually"
+                                                                ? ` – $${Math.round(
+                                                                    job.salary_max / 1000
+                                                                )}k`
+                                                                : ` – $${job.salary_max.toLocaleString()}`
+                                                        )
+                                                    }
+
+                                                    {" / "}
+
+                                                    {job.salary_period === "hourly" && "hr"}
+                                                    {job.salary_period === "daily" && "day"}
+                                                    {job.salary_period === "monthly" && "mo"}
+                                                    {job.salary_period === "annually" && "yr"}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    ${Math.round(job.salary_min / 1000)}k
+                                                    {job.salary_max &&
+                                                        ` – $${Math.round(
+                                                            job.salary_max / 1000
+                                                        )}k`
+                                                    }
+                                                </>
+                                            )}
                                         </div>
                                     )}
 
