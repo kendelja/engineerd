@@ -25,7 +25,7 @@ Engineerd is a full-stack job discovery platform that aggregates job postings fr
 * React dashboard displaying company, location, salary, experience, posting date, source, and logos
 
 <p align="center">
-  <img src="./EngineerdDemo.PNG" width="1000">
+  <img src="./EngineerdDemo.png" width="1000">
 </p>
 
 ## Architecture
