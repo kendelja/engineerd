@@ -1,6 +1,11 @@
+
 import asyncio
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from app.ingestion.pipeline import run_pipeline
+from app.ingestion.detail import fetcher_for
 
 from app.ingestion.scrapers.BuiltInScraper import BuiltInScraper
 from app.ingestion.parsers.BuiltInParser import BuiltInParser
@@ -11,27 +16,70 @@ from app.ingestion.parsers.WellfoundParser import WellfoundParser
 from app.ingestion.scrapers.JobBankScraper import JobBankScraper
 from app.ingestion.parsers.JobBankParser import JobBankParser
 
+from app.ingestion.scrapers.SimplifyJobsScraper import SimplifyJobsScraper
+from app.ingestion.parsers.SimplifyJobsParser import SimplifyJobsParser
+
+from app.ingestion.config import build_simplifyjobs_filter
+
 
 async def main(market="canada"):
-    await run_pipeline(
-        BuiltInScraper(market=market),
-        BuiltInParser(),
-        "Built In"
+    total = 0
+
+    # Keep your existing sources disabled for now.
+    # Re-enable them later when you're ready to run their market-specific pulls.
+
+    total += await run_pipeline(
+        BuiltInScraper(market=market, experience="junior"),
+        BuiltInParser(experience="junior"),
+        "Built In (junior)",
+        detail_fetcher=fetcher_for("BuiltIn"),
+        market=market,
     )
 
-    await run_pipeline(
+    total += await run_pipeline(
+        BuiltInScraper(market=market, experience="senior"),
+        BuiltInParser(experience="senior"),
+        "Built In (mid/senior)",
+        detail_fetcher=fetcher_for("BuiltIn"),
+        market=market,
+    )
+    total += await run_pipeline(
         WellfoundScraper(market=market),
         WellfoundParser(),
-        "Wellfound"
+        "Wellfound",
+        market=market,
     )
 
-     # Job Bank is Canada-only.
-    if market == "canada":
-        await run_pipeline(
-            JobBankScraper(market=market),
-            JobBankParser(),
-            "Job Bank"
-        )
+    # if market == "canada":
+    #     await run_pipeline(
+    #         JobBankScraper(market=market),
+    #         JobBankParser(),
+    #         "Job Bank",
+    #     )
+
+    # Fetch junior jobs.
+    junior_filter = build_simplifyjobs_filter("junior")
+
+    total += await run_pipeline(
+        SimplifyJobsScraper(filter_by=junior_filter),
+        SimplifyJobsParser(),
+        "SimplifyJobs (junior)",
+        detail_fetcher=fetcher_for("SimplifyJobs"),
+        market=market,
+    )
+
+    # Fetch mid-level and senior jobs in the same refresh.
+    senior_filter = build_simplifyjobs_filter("senior")
+
+    total += await run_pipeline(
+        SimplifyJobsScraper(filter_by=senior_filter),
+        SimplifyJobsParser(),
+        "SimplifyJobs (mid/senior)",
+        detail_fetcher=fetcher_for("SimplifyJobs"),
+        market=market,
+    )
+
+    return total
 
 
 if __name__ == "__main__":

@@ -76,9 +76,39 @@ class WellfoundParser:
 
         return numbers[0], None
 
+    # "5 years of exp", "0 years of exp"
+    EXPERIENCE_PATTERN = re.compile(
+        r"(\d+)\s*\+?\s*years?\s*of\s*exp",
+        re.IGNORECASE,
+    )
+
+    WORK_MODEL_PATTERN = re.compile(
+        r"^(?:remote|hybrid|in[- ]office|on[- ]?site|office)\b",
+        re.IGNORECASE,
+    )
+
+    def split_location(self, text: str):
+        """
+        "Remote only • Canada" -> ("Remote only", "Canada")
+        "In office • Vancouver" -> ("In office", "Vancouver")
+        "Toronto"              -> (None, "Toronto")
+        """
+
+        parts = [
+            part.strip()
+            for part in re.split(r"[•·]", text)
+            if part.strip()
+        ]
+
+        if parts and self.WORK_MODEL_PATTERN.match(parts[0]):
+            return parts[0], (" · ".join(parts[1:]) or None)
+
+        return None, text
+
     def parse(self, html: str) -> list[dict]:
         soup = BeautifulSoup(html, "html.parser")
         jobs = []
+        seen_ids = set()
 
         # Each company card
         job_cards = soup.select(
@@ -138,37 +168,43 @@ class WellfoundParser:
                 # SALARY + LOCATION
                 # -----------------------------------
 
+                # Each position lists up to three of these, in no
+                # fixed order: location / work model, salary, and
+                # required experience ("5 years of exp"). Classify
+                # by content so one never overwrites another.
                 info_elements = position.find_all("span", class_="pl-1 text-xs")
 
                 salary = None
                 location = None
-                remote_type = False
+                work_model_text = None
+                years_required = None
 
                 for element in info_elements:
-                    text = element.get_text(" ", strip=True)
+                    # Own text only: the location span nests a
+                    # "+ 3" badge for additional locations.
+                    text = " ".join(
+                        "".join(
+                            element.find_all(string=True, recursive=False)
+                        ).split()
+                    )
+
+                    if not text:
+                        continue
+
+                    years_match = self.EXPERIENCE_PATTERN.search(text)
 
                     if "$" in text:
                         salary = text
+                    elif years_match:
+                        years_required = int(years_match.group(1))
                     else:
-                        location = text
-
-                        if "remote" in text.lower():
-                            remote_type = True
+                        work_model_text, location = self.split_location(text)
 
                 # Convert salary string into database-ready values
                 salary_min, salary_max = self.parse_salary(salary)
 
-                # -----------------------------------
-                # EXPERIENCE
-                # -----------------------------------
-
-                experience_element = position.select_one(".fa-trophy")
-
-                if experience_element:
-                    experience_container = experience_element.parent.parent
-                    experience = experience_container.get_text(strip=True)
-                else:
-                    experience = None
+                # Wellfound compensation is always quoted per year.
+                salary_period = "annually" if salary_min is not None else None
 
                 # -----------------------------------
                 # POSTED DATE
@@ -191,18 +227,6 @@ class WellfoundParser:
                 posted_at = self.parse_posted_time(posted_text)
 
                 # -----------------------------------
-                # DESCRIPTION
-                # -----------------------------------
-
-                description_element = position.select_one(".collapse .fs-sm.fw-regular")
-
-                description = (
-                    description_element.get_text(strip=True)
-                    if description_element
-                    else None
-                )
-
-                # -----------------------------------
                 # JOB ID
                 # -----------------------------------
 
@@ -215,6 +239,14 @@ class WellfoundParser:
 
                     if match:
                         job_id = match.group(1)
+
+                # The same position can appear on several pages
+                # (engineer and developer role pages overlap).
+                if job_id:
+                    if job_id in seen_ids:
+                        continue
+
+                    seen_ids.add(job_id)
 
                 # -----------------------------------
                 # CREATE ONE JOB
@@ -229,11 +261,14 @@ class WellfoundParser:
                         "company_logo": company_logo,
                         "url": url,
                         "location": location,
-                        "remote_type": remote_type,
+                        "remote": work_model_text,
                         "salary_min": salary_min,
                         "salary_max": salary_max,
-                        "experience": experience,
-                        "description": description,
+                        "salary_period": salary_period,
+                        # Structured; the analyzer prefers this
+                        # over mining text.
+                        "years_required": years_required,
+                        "description": None,
                         "posted_at": posted_at,
                     }
                 )

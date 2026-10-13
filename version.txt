@@ -63,8 +63,13 @@ V1.6 - Expanded Job Bank ingestion and standardized salary data
      - Renamed the project to Engineerd to better reflect its focus on engineering, software, data, and technical job discovery
 
 TODO: - Also with salary, if no salary listed, do I leave blank or put note to user of no salary listed
-      - Add more concise experience divided ingestion (Ex. Seeing almost no junior roles right now, could have just junior ingestion, or multiple selectors for experience ingestion, would need more URLs to scrape)
-      - Fix remote filter just crashing site
+      DONE - Add more concise experience divided ingestion (Ex. Seeing almost no junior roles right now, could have just junior ingestion, or multiple selectors for experience ingestion, would need more URLs to scrape)
+      DONE - Fix remote filter just crashing site
       - Some job cards have a blank shape beside experience text, prob due to scraping problems with breaks (or emojis or colons) in between info on external job cards
       - Potentially change UI to have H1, H2 to left of main job search to make it more prominent
-      
+      OCT 10
+      - Simplyjobs added and jr/sr ingestion formed
+      - Builtin now grabs jr/sr posts filling both quotas
+      - Wellfound needs to be done
+      - I think jobbank is out bc i hate it
+      - 

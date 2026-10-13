@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
@@ -25,3 +25,18 @@ class Job:
     salary_min: Optional[float]
     salary_max: Optional[float]
     salary_period: Optional[str]
+
+    # "Remote" | "Hybrid" | "On-site" | None (unknown)
+    work_model: Optional[str] = None
+
+    # Set when the detail page was read (see app.ingestion.detail).
+    detail_checked_at: Optional[datetime] = None
+
+    # Populated by app.ingestion.analyzer during normalization.
+    years_required: Optional[int] = None
+    years_evidence: Optional[str] = None
+    skills: list[str] = field(default_factory=list)
+    fit_score: Optional[int] = None
+    fit_label: Optional[str] = None
+    fit_reasons: list[str] = field(default_factory=list)
+    fit_confidence: Optional[str] = None

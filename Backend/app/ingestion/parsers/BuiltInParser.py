@@ -6,6 +6,9 @@ from bs4 import BeautifulSoup
 
 class BuiltInParser:
 
+    def __init__(self, experience: str = "all"):
+        self.experience = experience
+
     # ---------------------------------------------------------
     # Helper: Convert relative posted time into datetime
     # ---------------------------------------------------------
@@ -94,16 +97,22 @@ class BuiltInParser:
     # ---------------------------------------------------------
     # Helper: Determine whether job is relevant
     # ---------------------------------------------------------
-    def is_relevant_job(self, title: str | None, description: str | None):
+    def is_relevant_job(
+        self,
+        title: str | None,
+        description: str | None = None,
+    ) -> bool:
         if not title:
             return False
 
         title_lower = title.lower()
 
-        # Clearly non-software engineering roles that Built In
-        # sometimes places under its general Engineering category.
+        # Roles outside the software-development scope of Engineerd.
         excluded_title_terms = [
+            # Manufacturing, trades, and non-software engineering
             "toolmaker",
+            "tool & die",
+            "tool and die",
             "manufacturing engineer",
             "manufacturing process engineer",
             "mechanical engineer",
@@ -116,10 +125,32 @@ class BuiltInParser:
             "automotive engineer",
             "aerospace engineer",
             "structural engineer",
+
+            # IT operations and infrastructure roles
+            "systems administrator",
+            "system administrator",
+            "network administrator",
+            "networking tester",
+            "wireless networking tester",
+            "testeur réseautique",
+
+            # Language-specific QA, rather than software QA
+            "lqa analyst",
+            "linguistic quality assurance",
+            "language quality assurance",
+            "quality assurance linguistique",
+
+            # Misc
+            "Co-op" #TODO Still shows so need to fix this 
         ]
 
-        for term in excluded_title_terms:
-            if term in title_lower:
+        if any(term in title_lower for term in excluded_title_terms):
+            return False
+
+        # Built In can include higher-level roles in its junior feed.
+        # Keep Software Engineer II for now, but reject explicit Level 4+.
+        if self.experience == "junior":
+            if re.search(r"\blevel\s*(?:[4-9]|\d{2,})\b", title_lower):
                 return False
 
         return True
@@ -340,7 +371,7 @@ class BuiltInParser:
                     "salary_min": salary_min,
                     "salary_max": salary_max,
                     "salary_period": salary_period,
-                    "experience": experience,
+                    "experience_level": experience,
                     "description": description,
                     "posted_at": posted_at,
                 }

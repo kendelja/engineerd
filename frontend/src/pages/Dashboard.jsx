@@ -1,506 +1,644 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-function Dashboard() {
-    const [jobs, setJobs] = useState([]);
+import JobCard from "../components/JobCard";
+import FitBadge from "../components/FitBadge";
+import ActivityChart from "../components/ActivityChart";
+import { IconChevron, IconGitHub, IconRefresh } from "../components/Icons";
+import SiteFooter, { REPO_URL } from "../components/SiteFooter";
+import SkillWheel from "../components/SkillWheel";
+import ThemeToggle from "../components/ThemeToggle";
+import {
+    fetchIngestStatus,
+    fetchJobs,
+    fetchSummary,
+    startIngest,
+    STATUS_POLL_MS,
+} from "../lib/api";
+import {
+    ENTRY_OPTIONS,
+    FIT_INFO,
+    LEGEND_ORDER,
+    filterJobs,
+    matchesExperience,
+    loadSavedIds,
+    storeSavedIds,
+} from "../lib/jobs";
+import { formatAgo, formatClock } from "../lib/status";
 
-    const [search, setSearch] = useState("");
-    const [remoteFilter, setRemoteFilter] = useState("all");
-    const [sourceFilter, setSourceFilter] = useState("all");
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [market, setMarket] = useState("canada");
 
-    const [savedJobs, setSavedJobs] = useState(() => {
-    const saved = localStorage.getItem("engineerd-saved-jobs");
-    return saved ? JSON.parse(saved) : [];
-    });
+const COUNTRY_OPTIONS = [
+    { value: "canada", label: "Canada", code: "CA" },
+    { value: "usa", label: "United States", code: "US" },
+    { value: "north-america", label: "North America", code: "NA" },
+];
 
-    const [showSaved, setShowSaved] = useState(false);
+const EXPERIENCE_OPTIONS = [
+    { value: "any", label: "Any" },
+    { value: "junior", label: "Junior" },
+    { value: "senior", label: "Senior+" },
+];
 
-    
+const WORK_OPTIONS = [
+    { value: "all", label: "All" },
+    { value: "remote", label: "Remote" },
+    { value: "hybrid", label: "Hybrid" },
+    { value: "on-site", label: "On-site" },
+];
 
-    useEffect(() => {
-        async function loadJobs() {
-            try {
-                const response = await fetch(
-                    "http://localhost:8000/jobs/"
-                );
+const THEME_KEY = "engineerd-theme";
 
-                if (!response.ok) {
-                    throw new Error("Failed to fetch jobs");
-                }
+// "light" | "dark" once the viewer has chosen; null means follow the system.
+function readStoredTheme() {
+    try {
+        const stored = localStorage.getItem(THEME_KEY);
 
-                const data = await response.json();
-                setJobs(data);
-            } catch (error) {
-                console.error("Failed to load jobs:", error);
-            }
-        }
-
-        loadJobs();
-    }, []);
-
-    async function handleRefresh() {
-        setIsRefreshing(true);
-
-        try {
-            const ingestResponse = await fetch(
-                `http://localhost:8000/jobs/ingest?market=${market}`,
-                {
-                    method: "POST",
-                }
-            );
-
-            if (!ingestResponse.ok) {
-                throw new Error("Failed to ingest jobs");
-            }
-
-            const response = await fetch(
-                "http://localhost:8000/jobs/"
-            );
-
-            if (!response.ok) {
-                throw new Error("Failed to fetch jobs");
-            }
-
-            const data = await response.json();
-            setJobs(data);
-
-        } catch (error) {
-            console.error("Unable to update jobs:", error);
-        } finally {
-            setIsRefreshing(false);
-        }
+        return stored === "light" || stored === "dark" ? stored : null;
+    } catch {
+        return null;
     }
+}
 
-    function formatPostedTime(postedAt) {
-        if (!postedAt) {
-            return {
-                text: "Unknown",
-                type: "unknown"
-            };
-        }
-
-        const postedDate = new Date(postedAt);
-        const now = new Date();
-
-        const postedDay = new Date(
-            postedDate.getFullYear(),
-            postedDate.getMonth(),
-            postedDate.getDate()
-        );
-
-        const today = new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate()
-        );
-
-        const dayDifference = Math.round(
-            (today - postedDay) / (1000 * 60 * 60 * 24)
-        );
-
-        if (dayDifference === 0) {
-            return {
-                text: "Today",
-                type: "today"
-            };
-        }
-
-        if (dayDifference === 1) {
-            return {
-                text: "Yesterday",
-                type: "yesterday"
-            };
-        }
-
-        if (dayDifference >= 2 && dayDifference <= 6) {
-            return {
-                text: `${dayDifference} days ago`,
-                type: "recent"
-            };
-        }
-
-        return {
-            text: postedDate.toLocaleDateString("en-CA", {
-                year: "numeric",
-                month: "short",
-                day: "numeric"
-            }),
-            type: "older"
-        };
+function storeTheme(theme) {
+    try {
+        localStorage.setItem(THEME_KEY, theme);
+    } catch {
+        // Blocked storage: the choice still applies for this visit.
     }
+}
 
-    function toggleSaved(jobId) {
-        setSavedJobs((current) => {
-            const isSaved = current.includes(jobId);
-
-            const updated = isSaved
-                ? current.filter((id) => id !== jobId)
-                : [...current, jobId];
-
-            localStorage.setItem(
-                "engineerd-saved-jobs",
-                JSON.stringify(updated)
-            );
-
-            return updated;
-        });
-    }
-
-    function isJobSaved(jobId) {
-        return savedJobs.includes(jobId);
-    }
-
-    const filteredJobs = jobs.filter((job) => {
-        const searchText = search.toLowerCase();
-
-        const matchesSearch =
-            job.title?.toLowerCase().includes(searchText) ||
-            job.company?.toLowerCase().includes(searchText);
-
-        const matchesRemote =
-            remoteFilter === "all" ||
-            job.remote_type?.toLowerCase() === remoteFilter;
-
-        const matchesSource =
-            sourceFilter === "all" ||
-            job.source?.toLowerCase() === sourceFilter;
-
-        const matchesSaved =
-            !showSaved || savedJobs.includes(job.id);
-
-        return (
-            matchesSearch &&
-            matchesRemote &&
-            matchesSource &&
-            matchesSaved
-        );
-    });
-
-    function formatJobTitle(job) {
-        if (!job.title) return "";
-
-        if (job.source !== "Job Bank") {
-            return job.title;
-        }
-
-        const specialCases = {
-            ai: "AI",
-            api: "API",
-            apis: "APIs",
-            aws: "AWS",
-            azure: "Azure",
-            c: "C",
-            "c++": "C++",
-            "c#": "C#",
-            css: "CSS",
-            devops: "DevOps",
-            etl: "ETL",
-            gis: "GIS",
-            html: "HTML",
-            ios: "iOS",
-            it: "IT",
-            java: "Java",
-            javascript: "JavaScript",
-            js: "JS",
-            kotlin: "Kotlin",
-            ml: "ML",
-            mysql: "MySQL",
-            node: "Node",
-            "node.js": "Node.js",
-            php: "PHP",
-            postgresql: "PostgreSQL",
-            python: "Python",
-            react: "React",
-            "react.js": "React.js",
-            sql: "SQL",
-            typescript: "TypeScript",
-            ui: "UI",
-            ux: "UX",
-            vue: "Vue",
-        };
-
-        return job.title
-            .split(" ")
-            .map((word) => {
-                const key = word.toLowerCase();
-
-                if (specialCases[key]) {
-                    return specialCases[key];
-                }
-
-                return word.charAt(0).toUpperCase() + word.slice(1);
-            })
-            .join(" ");
-    }
+const DEFAULT_FILTERS = {
+    market: "canada",
+    remote: "all",
+    experience: "junior",
+    entryYears: "any",
+    hideGhost: false,
+};
 
 
+function Segmented({ label, options, value, onChange }) {
     return (
-        <div className="app">
-
-            <header className="topbar">
-                <img
-                    src="/EngineerdLogoWhite.svg"
-                    alt="Engineerd"
-                    className="logo"
-                />
-
-                <div className="job-count">
-                    {filteredJobs.length} jobs
-                </div>
-            </header>
-
-
-            <main className="dashboard">
-
-                <section className="hero">
-                    <h1>One search. Multiple job sources.</h1>
-                    <p>
-                        Engineerd brings job postings from across the web into one searchable dashboard.
-                    </p>
-                </section>
-
-
-                <section className="search-panel">
-                    <div className="market-selector">
-                        <div className="market-label">
-                            <span>SEARCH MARKET</span>
-                            <small>Choose where you want to find jobs</small>
-                        </div>
-
-                        <div className="market-options">
-                            <button
-                                className={market === "canada" ? "active" : ""}
-                                onClick={() => setMarket("canada")}
-                            >
-                                <span className="market-flag">CA</span>
-                                <span>Canada</span>
-                            </button>
-
-                            <button
-                                className={market === "usa" ? "active" : ""}
-                                onClick={() => setMarket("usa")}
-                            >
-                                <span className="market-flag">US</span>
-                                <span>United States</span>
-                            </button>
-
-                            <button
-                                className={market === "north-america" ? "active" : ""}
-                                onClick={() => setMarket("north-america")}
-                            >
-                                <span className="market-flag">NA</span>
-                                <span>North America</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="filter-row">
-                        <div className="search-wrapper">
-                            <span>⌕</span>
-                            <input
-                                type="text"
-                                placeholder="Search jobs or companies..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-
-                        <select
-                            value={remoteFilter}
-                            onChange={(e) => setRemoteFilter(e.target.value)}
-                        >
-                            <option value="all">All locations</option>
-                            <option value="remote">Remote</option>
-                            <option value="remote only">Remote only</option>
-                            <option value="on-site">On-site</option>
-                        </select>
-
-                        <select
-                            value={sourceFilter}
-                            onChange={(e) => setSourceFilter(e.target.value)}
-                        >
-                            <option value="all">All sources</option>
-                            <option value="builtin">Built In</option>
-                            <option value="wellfound">Wellfound</option>
-                        </select>
-
-                        <button
-                            className="find-jobs-button"
-                            onClick={handleRefresh}
-                            disabled={isRefreshing}
-                        >
-                            {isRefreshing ? (
-                                <>
-                                    <span className="spinner"></span>
-                                    Finding Jobs...
-                                </>
-                            ) : (
-                                "Find New Jobs"
-                            )}
-                        </button>
-                    </div>
-                </section>
-
-
-                <div className="results-header">
-                    <span>
-                        {filteredJobs.length} matching jobs
-                    </span>
-
-                    <div className="saved-toggle">
-                        <button
-                            className={!showSaved ? "active" : ""}
-                            onClick={() => setShowSaved(false)}
-                        >
-                            All Jobs
-                        </button>
-
-                        <button
-                            className={showSaved ? "active" : ""}
-                            onClick={() => setShowSaved(true)}
-                        >
-                            ♡ Saved
-                            {savedJobs.length > 0 && (
-                                <span className="saved-count">
-                                    {savedJobs.length}
-                                </span>
-                            )}
-                        </button>
-                    </div>
-                </div>
-
-
-                <section className="job-list">
-
-                    {filteredJobs.map((job) => (
-
-                        <article className="job-card" key={job.id}>
-                            <div className="company-logo">
-                                {job.company_logo ? (
-                                    <img
-                                        src={job.company_logo}
-                                        alt={`${job.company} logo`}
-                                    />
-                                ) : (
-                                    <span>
-                                        {job.company?.charAt(0)}
-                                    </span>
-                                )}
-                            </div>
-
-                            <div className="job-content">
-                                <div className="job-main">
-                                    <h2>{formatJobTitle(job)}</h2>
-
-                                    <div className="company">
-                                        {job.company}
-                                    </div>
-
-                                    <div className="job-meta">
-                                        {job.location && (
-                                            <span>{job.location}</span>
-                                        )}
-
-                                        {job.remote_type && (
-                                            <span className="tag remote">
-                                                {job.remote_type}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="job-right">
-                                    <span
-                                        className={`posted-badge posted-${formatPostedTime(job.posted_at).type}`}
-                                    >
-                                        {formatPostedTime(job.posted_at).text}
-                                    </span>
-
-                                    {job.salary_min && (
-                                        <div className="salary">
-                                            {job.salary_period ? (
-                                                <>
-                                                    {job.salary_period === "annually"
-                                                        ? `$${Math.round(job.salary_min / 1000)}k`
-                                                        : `$${job.salary_min.toLocaleString()}`
-                                                    }
-
-                                                    {job.salary_max &&
-                                                        (
-                                                            job.salary_period === "annually"
-                                                                ? ` – $${Math.round(
-                                                                    job.salary_max / 1000
-                                                                )}k`
-                                                                : ` – $${job.salary_max.toLocaleString()}`
-                                                        )
-                                                    }
-
-                                                    {" / "}
-
-                                                    {job.salary_period === "hourly" && "hr"}
-                                                    {job.salary_period === "daily" && "day"}
-                                                    {job.salary_period === "monthly" && "mo"}
-                                                    {job.salary_period === "annually" && "yr"}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    ${Math.round(job.salary_min / 1000)}k
-                                                    {job.salary_max &&
-                                                        ` – $${Math.round(
-                                                            job.salary_max / 1000
-                                                        )}k`
-                                                    }
-                                                </>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <span className="source">
-                                        {job.source}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <button
-                                className={`save-job ${
-                                    isJobSaved(job.id) ? "saved" : ""
-                                }`}
-                                onClick={() => toggleSaved(job.id)}
-                                aria-label={
-                                    isJobSaved(job.id)
-                                        ? "Remove saved job"
-                                        : "Save job"
-                                }
-                            >
-                                <span className="save-icon">
-                                    {isJobSaved(job.id) ? "♥" : "♡"}
-                                </span>
-
-                                <span className="save-text">
-                                    {isJobSaved(job.id) ? "Saved" : "Save"}
-                                </span>
-                            </button>
-
-                            <a
-                                className="view-job"
-                                href={job.url}
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                <span>View Job</span>
-                                <span className="view-arrow">→</span>
-                            </a>
-                        </article>
-                    ))}
-
-                </section>
-
-            </main>
-
+        <div className="control">
+            <span className="control-label">{label}</span>
+            <div className="segmented" role="group" aria-label={label}>
+                {options.map((option) => (
+                    <button
+                        key={option.value}
+                        className={option.value === value ? "active" : ""}
+                        aria-pressed={option.value === value}
+                        onClick={() => onChange(option.value)}
+                        title={option.title}
+                    >
+                        {option.code && (
+                            <span className="country-code">{option.code}</span>
+                        )}
+                        {option.label}
+                        {option.count > 0 && ` (${option.count})`}
+                    </button>
+                ))}
+            </div>
         </div>
     );
 }
 
 
-export default Dashboard;
+export default function Dashboard() {
+    const [jobs, setJobs] = useState([]);
+    const [loadError, setLoadError] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [refreshMessage, setRefreshMessage] = useState("");
+    const [ingest, setIngest] = useState(null);
+    const [dataVersion, setDataVersion] = useState(0);
+
+    const [filters, setFilters] = useState(DEFAULT_FILTERS);
+    const [showSaved, setShowSaved] = useState(false);
+    const [advancedOpen, setAdvancedOpen] = useState(false);
+    const [legendOpen, setLegendOpen] = useState(false);
+
+    const [savedIds, setSavedIds] = useState(loadSavedIds);
+
+    const [activity, setActivity] = useState([]);
+    const [topSkills, setTopSkills] = useState([]);
+
+    const [theme, setTheme] = useState(readStoredTheme);
+
+
+    /* ============================================================
+       DATA
+       ============================================================ */
+
+    // Loads on mount, and again whenever new jobs have landed.
+    useEffect(() => {
+        let cancelled = false;
+
+        Promise.all([fetchJobs(), fetchSummary()])
+            .then(([data, summary]) => {
+                if (!cancelled) {
+                    setJobs(data);
+                    setLoadError(false);
+                    setActivity(summary.activity);
+                    setTopSkills(summary.topSkills);
+                }
+            })
+            .catch((error) => {
+                console.error("Failed to load jobs:", error);
+
+                if (!cancelled) {
+                    setLoadError(true);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [dataVersion]);
+
+    // Keeps the "updated" line current, and reloads the list when a
+    // scheduled refresh finishes while the page is open.
+    useEffect(() => {
+        let cancelled = false;
+        let lastSeen = null;
+
+        const poll = () =>
+            fetchIngestStatus()
+                .then((status) => {
+                    if (cancelled) {
+                        return;
+                    }
+
+                    setIngest(status);
+
+                    if (lastSeen && status.last_success_at !== lastSeen) {
+                        setDataVersion((version) => version + 1);
+                    }
+
+                    lastSeen = status.last_success_at;
+                })
+                .catch(() => {
+                    // Status is informational; a missed poll is fine.
+                });
+
+        poll();
+
+        const timer = setInterval(poll, STATUS_POLL_MS);
+
+        return () => {
+            cancelled = true;
+            clearInterval(timer);
+        };
+    }, []);
+
+    async function handleRefresh() {
+        setIsRefreshing(true);
+        setRefreshMessage("");
+
+        try {
+            const result = await startIngest(filters.market);
+
+            if (result.status === 409) {
+                setRefreshMessage(
+                    "A refresh is already running. The list will update when it finishes."
+                );
+            } else if (!result.ok) {
+                setRefreshMessage(
+                    "The refresh didn’t finish. Your list is unchanged."
+                );
+            } else {
+                setDataVersion((version) => version + 1);
+            }
+        } catch (error) {
+            console.error("Unable to update jobs:", error);
+            setRefreshMessage(
+                "Can’t reach the Engineerd API right now. Your list is unchanged."
+            );
+        } finally {
+            setIsRefreshing(false);
+        }
+    }
+
+
+    /* ============================================================
+       THEME
+       ============================================================ */
+
+    useEffect(() => {
+        const root = document.documentElement;
+
+        if (theme) {
+            root.dataset.theme = theme;
+        } else {
+            delete root.dataset.theme;
+        }
+    }, [theme]);
+
+    const systemPrefersDark =
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+
+    const isDark = theme ? theme === "dark" : systemPrefersDark;
+
+    // Same logo and size in both themes: black in light mode, orange in dark.
+    const logo = {
+        file: "/EngineerdLogo.svg",
+        width: 80,
+        height: 64,
+        color: isDark ? "var(--accent)" : "var(--ink)",
+    };
+
+    function toggleTheme() {
+        const next = isDark ? "light" : "dark";
+
+        storeTheme(next);
+        setTheme(next);
+    }
+
+
+    /* ============================================================
+       SAVED
+       ============================================================ */
+
+    function toggleSaved(jobId) {
+        setSavedIds((current) => {
+            const updated = current.includes(jobId)
+                ? current.filter((id) => id !== jobId)
+                : [...current, jobId];
+
+            storeSavedIds(updated);
+
+            return updated;
+        });
+    }
+
+
+    /* ============================================================
+       FILTERS
+       ============================================================ */
+
+    const setFilter = (key) => (value) =>
+        setFilters((current) => ({ ...current, [key]: value }));
+
+    const filtersChanged = JSON.stringify(filters) !== JSON.stringify(DEFAULT_FILTERS);
+
+    const advancedActive =
+        (filters.entryYears !== "any" ? 1 : 0) + (filters.hideGhost ? 1 : 0);
+
+    const visibleJobs = useMemo(
+        () =>
+            filterJobs(jobs, {
+                remote: filters.remote,
+                experience: filters.experience,
+                entryYears: filters.entryYears,
+                hideGhost: filters.hideGhost,
+                showSaved,
+                savedIds,
+            }),
+        [jobs, filters, showSaved, savedIds]
+    );
+
+    const stats = useMemo(() => {
+        const total = jobs.length;
+        const juniorCount = jobs.filter((job) => matchesExperience(job, "junior")).length;
+        const seniorCount = jobs.filter((job) => matchesExperience(job, "senior")).length;
+        const ghost = jobs.filter((job) => job.fit_label === "ghost-junior").length;
+        const withYears = jobs.filter((job) => job.years_required !== null && job.years_required !== undefined).length;
+
+        return {
+            total,
+            juniorCount,
+            seniorCount,
+            ghost,
+            withYears,
+            withYearsPct: total ? Math.round((withYears / total) * 100) : 0,
+        };
+    }, [jobs]);
+
+    function resetFilters() {
+        setFilters(DEFAULT_FILTERS);
+        setShowSaved(false);
+    }
+
+
+    /* ============================================================
+       RENDER
+       ============================================================ */
+
+    return (
+        <div className="app">
+
+            <header className="nav">
+
+                <div className="brand">
+                    <span
+                        className="brand-mark"
+                        role="img"
+                        aria-label="Engineerd"
+                        style={{
+                            width: logo.width,
+                            height: logo.height,
+                            background: logo.color,
+                            maskImage: `url(${logo.file})`,
+                            WebkitMaskImage: `url(${logo.file})`,
+                        }}
+                    />
+                </div>
+
+                <div className="nav-actions">
+
+                    <a
+                        className="github-link"
+                        href={REPO_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        <IconGitHub />
+                        GitHub
+                    </a>
+
+                    <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
+
+                </div>
+
+
+            </header>
+
+            <main className="page">
+
+                <section className="hero">
+
+                    <div className="hero-copy">
+
+                        <p className="eyebrow">Engineerd · job discovery</p>
+
+                        <h1>
+                            Every level, <em>honestly</em> labelled.
+                        </h1>
+
+                        <p className="lede">
+                            Job boards tag roles junior, mid or senior, and they
+                            rarely agree. We read each posting and show what it
+                            really asks for, from entry-level to senior+.
+                        </p>
+
+                        <p className="freshness">
+                            {ingest?.running
+                                ? "Updating now…"
+                                : ingest?.last_success_at
+                                ? `Updated ${formatAgo(ingest.last_success_at)}`
+                                : null}
+                            {!ingest?.running && ingest?.next_run_at &&
+                                ` · next update ${formatClock(ingest.next_run_at)}`}
+                        </p>
+
+                    </div>
+
+                    <aside className="hero-side">
+                        <ActivityChart days={activity} />
+
+                    </aside>
+
+                    <dl className="stats">
+
+                        <div>
+                            <dt>All postings</dt>
+                            <dd>{stats.total}</dd>
+                        </div>
+
+                        <div className="stat-good">
+                            <dt>Junior</dt>
+                            <dd>{stats.juniorCount}</dd>
+                        </div>
+
+                        <div className="stat-senior">
+                            <dt>Senior+</dt>
+                            <dd>{stats.seniorCount}</dd>
+                        </div>
+
+                        <div>
+                            <dt title="Share of postings that say how many years of experience they want">
+                                Experience listed
+                            </dt>
+                            <dd>{stats.withYearsPct}%</dd>
+                            <p className="stat-note">
+                                say how many years they want
+                            </p>
+                        </div>
+
+                        <div className="stat-skills">
+                            <dt>Top skills</dt>
+                            <dd>
+                                <SkillWheel skills={topSkills} />
+                            </dd>
+                        </div>
+
+                    </dl>
+
+                </section>
+
+                {loadError && (
+                    <div className="notice notice-error" role="alert">
+                        Can’t reach the Engineerd API right now. Start the backend
+                        and refresh the page.
+                    </div>
+                )}
+
+                {refreshMessage && (
+                    <div className="notice notice-error" role="alert">
+                        {refreshMessage}
+                    </div>
+                )}
+
+                <section className="toolbar" aria-label="Filters">
+
+                    <div className="tabs" role="tablist">
+                        <button
+                            role="tab"
+                            aria-selected={!showSaved}
+                            className={!showSaved ? "active" : ""}
+                            onClick={() => setShowSaved(false)}
+                        >
+                            Jobs <span className="count">{jobs.length}</span>
+                        </button>
+                        <button
+                            role="tab"
+                            aria-selected={showSaved}
+                            className={showSaved ? "active" : ""}
+                            onClick={() => setShowSaved(true)}
+                        >
+                            Saved <span className="count">{savedIds.length}</span>
+                        </button>
+                    </div>
+
+                    <div className="toolbar-actions">
+
+                        {filtersChanged && (
+                            <button className="text-button" onClick={resetFilters}>
+                                Reset
+                            </button>
+                        )}
+
+                    </div>
+
+                </section>
+
+                <section className="filters">
+
+                    <Segmented
+                        label="Country"
+                        options={COUNTRY_OPTIONS}
+                        value={filters.market}
+                        onChange={setFilter("market")}
+                    />
+
+                    <Segmented
+                        label="Experience"
+                        options={EXPERIENCE_OPTIONS}
+                        value={filters.experience}
+                        onChange={setFilter("experience")}
+                    />
+
+                    <Segmented
+                        label="Work type"
+                        options={WORK_OPTIONS}
+                        value={filters.remote}
+                        onChange={setFilter("remote")}
+                    />
+
+                    <div className="control">
+                        <span className="control-label">More</span>
+                        <button
+                            className="advanced-toggle"
+                            onClick={() => setAdvancedOpen((open) => !open)}
+                            aria-expanded={advancedOpen}
+                        >
+                            Advanced
+                            {advancedActive > 0 && (
+                                <span className="advanced-count">{advancedActive}</span>
+                            )}
+                            <span className={`chevron ${advancedOpen ? "open" : ""}`}>
+                                <IconChevron />
+                            </span>
+                        </button>
+                    </div>
+
+                </section>
+
+                {advancedOpen && (
+                    <section className="advanced-panel" aria-label="Advanced filters">
+
+
+                        <Segmented
+                            label="Years required"
+                            options={ENTRY_OPTIONS}
+                            value={filters.entryYears}
+                            onChange={setFilter("entryYears")}
+                        />
+
+                        <Segmented
+                            label="Ghost junior"
+                            options={[
+                                { value: false, label: "Show all" },
+                                {
+                                    value: true,
+                                    label: "Hide",
+                                    title: FIT_INFO["ghost-junior"].help,
+                                    count: stats.ghost,
+                                },
+                            ]}
+                            value={filters.hideGhost}
+                            onChange={setFilter("hideGhost")}
+                        />
+
+                        <div className="refresh-row">
+                            <button
+                                className="refresh-button"
+                                onClick={handleRefresh}
+                                disabled={isRefreshing || ingest?.running}
+                            >
+                                {isRefreshing || ingest?.running ? (
+                                    <>
+                                        <span className="spinner" aria-hidden="true" />
+                                        Finding jobs…
+                                    </>
+                                ) : (
+                                    <>
+                                        <IconRefresh />
+                                        Find new jobs
+                                    </>
+                                )}
+                            </button>
+                            <span className="hint">
+                                Jobs also refresh on a schedule. Use this to see new ones now.
+                            </span>
+                        </div>
+
+                    </section>
+                )}
+
+                <div className="results-meta">
+
+                    <span>
+                        <strong>{visibleJobs.length}</strong>{" "}
+                        {showSaved ? "saved" : "matching"} {visibleJobs.length === 1 ? "job" : "jobs"}
+                    </span>
+
+                    <button
+                        className="text-button legend-toggle"
+                        onClick={() => setLegendOpen((open) => !open)}
+                        aria-expanded={legendOpen}
+                    >
+                        What do the labels mean?
+                    </button>
+
+                </div>
+
+                {legendOpen && (
+                    <section className="legend" aria-label="What the labels mean">
+                        <p>
+                            Job boards label roles “junior” loosely. Each card
+                            shows what the posting actually asks for, read from
+                            the full listing.
+                        </p>
+                        <ul>
+                            {LEGEND_ORDER.map((key) => (
+                                <li key={key}>
+                                    <FitBadge label={key} />
+                                    <span>{FIT_INFO[key].help}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
+                {visibleJobs.length === 0 ? (
+                    <div className="empty">
+                        <h3>
+                            {showSaved
+                                ? "Nothing saved matches these filters."
+                                : "No jobs match these filters."}
+                        </h3>
+                        <p>Try a wider experience range or a different work type.</p>
+                        {filtersChanged && (
+                            <button className="primary-button" onClick={resetFilters}>
+                                Reset filters
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    <section className="job-grid">
+                        {visibleJobs.map((job) => (
+                            <JobCard
+                                key={job.id}
+                                job={job}
+                                saved={savedIds.includes(job.id)}
+                                onToggleSave={toggleSaved}
+                            />
+                        ))}
+                    </section>
+                )}
+
+            </main>
+
+            <SiteFooter />
+
+        </div>
+    );
+}

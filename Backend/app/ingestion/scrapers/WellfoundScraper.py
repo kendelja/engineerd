@@ -1,35 +1,67 @@
+import asyncio
+import random
+
 from playwright.async_api import async_playwright
+
+from app.ingestion.config import (
+    WELLFOUND_PAGES_PER_URL,
+    WELLFOUND_URLS,
+)
 
 
 class WellfoundScraper:
+    """
+    Reads Wellfound role pages for a market.
+
+    All experience levels come back together; each position carries
+    its required years of experience, which WellfoundParser extracts
+    so the analyzer can tell junior from senior.
+    """
 
     BASE_URL = "https://wellfound.com"
 
-    JOB_URLS = {
-        "canada": [
-            "/role/l/engineer/canada-startups",
-            "/role/l/developer/canada-startups",
-        ],
+    # Polite pause between page loads.
+    PAGE_DELAY_SECONDS = (1.5, 3.0)
 
-        "usa": [
-            "/role/l/engineer/united-states",
-            "/role/l/developer/united-states",
-        ],
-
-        "north-america": [
-            "/role/l/engineer/north-america",
-            "/role/l/developer/north-america",
-        ],
-    }
-
-    def __init__(self, market="canada", headless=True):
+    def __init__(
+        self,
+        market="canada",
+        pages_per_url=WELLFOUND_PAGES_PER_URL,
+        headless=True,
+    ):
         self.market = market
+        self.pages_per_url = pages_per_url
         self.headless = headless
+
+    def build_page_url(self, path: str, page_number: int) -> str:
+        url = f"{self.BASE_URL}{path}"
+
+        if page_number == 1:
+            return url
+
+        return f"{url}?page={page_number}"
+
+    def paths(self) -> list[str]:
+        if self.market == "north-america":
+            markets = ["canada", "usa"]
+        else:
+            markets = [self.market]
+
+        unknown = [m for m in markets if m not in WELLFOUND_URLS]
+
+        if unknown:
+            raise ValueError(
+                f"No Wellfound URLs configured for market: {unknown[0]}"
+            )
+
+        return [
+            path
+            for market in markets
+            for path in WELLFOUND_URLS[market]
+        ]
 
     async def fetch_jobs_page(self) -> str:
         pages = []
-
-        urls = self.JOB_URLS[self.market]
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(
@@ -39,27 +71,40 @@ class WellfoundScraper:
             page = await browser.new_page()
 
             try:
-                for path in urls:
-                    url = f"{self.BASE_URL}{path}"
+                for path in self.paths():
+                    for page_number in range(1, self.pages_per_url + 1):
+                        url = self.build_page_url(path, page_number)
 
-                    print(
-                        f"Fetching Wellfound "
-                        f"({self.market}): {url}"
-                    )
+                        print(
+                            f"Fetching Wellfound "
+                            f"({self.market}) page {page_number}: {url}"
+                        )
 
-                    await page.goto(
-                        url,
-                        wait_until="domcontentloaded",
-                        timeout=60000
-                    )
+                        response = await page.goto(
+                            url,
+                            wait_until="domcontentloaded",
+                            timeout=60000
+                        )
 
-                    await page.wait_for_timeout(2000)
+                        if response is not None and response.status >= 400:
+                            print(f"  skipped (HTTP {response.status})")
+                            break
 
-                    html = await page.content()
+                        await page.wait_for_timeout(2000)
 
-                    pages.append(html)
+                        html = await page.content()
 
-                    print("Page downloaded.")
+                        pages.append(html)
+
+                        print("Page downloaded.")
+
+                        # Stop once this listing runs out of pages.
+                        if 'aria-label="Next page"' not in html:
+                            break
+
+                        await asyncio.sleep(
+                            random.uniform(*self.PAGE_DELAY_SECONDS)
+                        )
 
             finally:
                 await browser.close()

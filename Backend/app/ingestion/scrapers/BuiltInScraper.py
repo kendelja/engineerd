@@ -6,20 +6,36 @@ class BuiltInScraper:
     BASE_URL = "https://builtin.com"
 
     JOB_FEEDS = {
-        "canada": [
-            "/jobs/remote/hybrid/office/engineering?country=CAN&allLocations=true",
-        ],
-
-        "usa": [
-            "/jobs/remote/hybrid/office/engineering?city=&state=&country=USA&allLocations=true",
-        ],
+        "canada": {
+            "all": [
+                "/jobs/remote/hybrid/office/engineering?country=CAN&allLocations=true",
+            ],
+            "junior": [
+                "/jobs/remote/hybrid/office/engineering/entry-level/junior?country=CAN&allLocations=true",
+            ],
+            "senior": [
+                "/jobs/remote/hybrid/office/engineering/mid-level/senior/expert-leader?country=CAN&allLocations=true",
+            ],
+        },
+        "usa": {
+            "all": [
+                "/jobs/remote/hybrid/office/engineering?city=&state=&country=USA&allLocations=true",
+            ],
+            "junior": [
+                "/jobs/remote/hybrid/office/engineering/entry-level/junior?country=USA&allLocations=true",
+            ],
+            "senior": [
+                "/jobs/remote/hybrid/office/engineering/mid-level/senior/expert-leader?country=USA&allLocations=true",
+            ],
+        },
     }
 
     # Number of pages to collect from each feed.
     PAGES_PER_FEED = 2
 
-    def __init__(self, market="canada", headless=True):
+    def __init__(self, market="canada", experience="all", headless=True):
         self.market = market
+        self.experience = experience
         self.headless = headless
 
     async def fetch_page(self, page, url: str) -> str:
@@ -72,19 +88,21 @@ class BuiltInScraper:
 
         # Validate market
         if self.market not in {"canada", "usa", "north-america"}:
-            raise ValueError(
-                f"Invalid market: {self.market}. "
-                f"Expected one of: canada, usa, north-america"
-            )
+                    raise ValueError(f"Invalid market: {self.market}")
 
-        # North America = Canada + USA
+        if self.experience not in {"all", "junior", "senior"}:
+            raise ValueError(f"Invalid experience: {self.experience}")
+
         if self.market == "north-america":
-            feeds = (
-                self.JOB_FEEDS["canada"]
-                + self.JOB_FEEDS["usa"]
-            )
+            markets = ["canada", "usa"]
         else:
-            feeds = self.JOB_FEEDS[self.market]
+            markets = [self.market]
+
+        feeds = [
+            feed_url
+            for market in markets
+            for feed_url in self.JOB_FEEDS[market][self.experience]
+        ]
 
         pages = []
 
