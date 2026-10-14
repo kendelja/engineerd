@@ -1,6 +1,10 @@
 
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import json
+
+# Stored times are naive local (Toronto), matching the other sources.
+LOCAL_TZ = ZoneInfo("America/Toronto")
 
 
 class SimplifyJobsParser:
@@ -53,7 +57,7 @@ class SimplifyJobsParser:
                 if isinstance(start_date, (int, float)) and start_date > 0:
                     posted_at = datetime.fromtimestamp(
                         start_date,
-                        tz=timezone.utc
+                        tz=LOCAL_TZ
                     ).replace(tzinfo=None)
 
                 jobs.append({
