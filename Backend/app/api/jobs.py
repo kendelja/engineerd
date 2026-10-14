@@ -1,4 +1,7 @@
-from fastapi import APIRouter, HTTPException, Query
+import os
+import secrets
+
+from fastapi import APIRouter, Header, HTTPException, Query
 
 from app.database.repositories import (
     get_daily_postings,
@@ -17,8 +20,18 @@ router = APIRouter(prefix="/jobs", tags=["Jobs"])
 @router.post("/ingest")
 async def ingest_jobs(
     market: str = "canada",
+    x_admin_token: str | None = Header(default=None),
     #experience: str = "all",
 ):
+    # Manual refresh is for the owner only. With no ADMIN_TOKEN set it is off.
+    expected_token = os.getenv("ADMIN_TOKEN")
+
+    if not expected_token:
+        raise HTTPException(status_code=403, detail="Manual refresh is disabled.")
+
+    if not secrets.compare_digest(x_admin_token or "", expected_token):
+        raise HTTPException(status_code=403, detail="Admin token rejected.")
+
     valid_markets = {"canada", "usa", "north-america"}
     #valid_experience = {"all", "junior", "senior"}
 

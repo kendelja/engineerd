@@ -4,6 +4,7 @@ import random
 from playwright.async_api import async_playwright
 
 from app.ingestion.config import (
+    SCRAPER_USER_AGENT,
     WELLFOUND_PAGES_PER_URL,
     WELLFOUND_URLS,
 )
@@ -68,7 +69,8 @@ class WellfoundScraper:
                 headless=self.headless
             )
 
-            page = await browser.new_page()
+            context = await browser.new_context(user_agent=SCRAPER_USER_AGENT)
+            page = await context.new_page()
 
             try:
                 for path in self.paths():

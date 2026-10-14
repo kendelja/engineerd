@@ -1,3 +1,10 @@
+# A normal desktop Chrome string. Headless Chromium announces itself as
+# "HeadlessChrome" by default, which some job boards block on sight.
+SCRAPER_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+)
+
 VALID_MARKETS = {
     "canada",
     "usa",

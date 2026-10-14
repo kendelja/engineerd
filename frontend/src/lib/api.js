@@ -39,11 +39,34 @@ export async function fetchIngestStatus() {
     return response.json();
 }
 
+const ADMIN_TOKEN_KEY = "engineerd-admin-token";
+
+// Kept for this browser session only; closing the tab forgets it.
+export function readAdminToken() {
+    try {
+        return sessionStorage.getItem(ADMIN_TOKEN_KEY) || "";
+    } catch {
+        return "";
+    }
+}
+
+export function storeAdminToken(token) {
+    try {
+        if (token) {
+            sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
+        } else {
+            sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+        }
+    } catch {
+        // Blocked storage: the token is asked for again next time.
+    }
+}
+
 // Resolves with the HTTP status so the caller can tell "busy" from "failed".
-export async function startIngest(market) {
+export async function startIngest(market, token) {
     const response = await fetch(
         `${API_URL}/jobs/ingest?market=${market}`,
-        { method: "POST" }
+        { method: "POST", headers: { "X-Admin-Token": token } }
     );
 
     return { ok: response.ok, status: response.status };

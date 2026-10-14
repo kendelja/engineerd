@@ -5,6 +5,7 @@ import httpx
 import requests
 
 from app.ingestion.config import (
+    SCRAPER_USER_AGENT,
     SIMPLIFYJOBS_API_URL,
     SIMPLIFYJOBS_QUERY,
     SIMPLIFYJOBS_PER_PAGE,
@@ -40,6 +41,7 @@ class SimplifyJobsScraper:
 
     async def fetch_jobs_page(self) -> str:
         headers = {
+            "User-Agent": SCRAPER_USER_AGENT,
             "x-typesense-api-key": self.api_key,
             "Content-Type": "application/json",
         }

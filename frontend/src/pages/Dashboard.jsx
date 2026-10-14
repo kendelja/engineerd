@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import JobCard from "../components/JobCard";
 import FitBadge from "../components/FitBadge";
@@ -11,8 +11,10 @@ import {
     fetchIngestStatus,
     fetchJobs,
     fetchSummary,
+    readAdminToken,
     startIngest,
     STATUS_POLL_MS,
+    storeAdminToken,
 } from "../lib/api";
 import {
     ENTRY_OPTIONS,
@@ -121,6 +123,10 @@ export default function Dashboard() {
 
     const [theme, setTheme] = useState(readStoredTheme);
 
+    // Hidden refresh control: six quick clicks on the logo reveal it.
+    const [adminOpen, setAdminOpen] = useState(false);
+    const logoClicks = useRef([]);
+
 
     /* ============================================================
        DATA
@@ -187,14 +193,43 @@ export default function Dashboard() {
         };
     }, []);
 
+    function onLogoClick() {
+        const now = Date.now();
+
+        logoClicks.current = [
+            ...logoClicks.current.filter((time) => now - time < 4000),
+            now,
+        ];
+
+        if (logoClicks.current.length >= 6) {
+            logoClicks.current = [];
+            setAdminOpen(true);
+        }
+    }
+
     async function handleRefresh() {
+        let token = readAdminToken();
+
+        if (!token) {
+            token = window.prompt("Admin token") || "";
+
+            if (!token) {
+                return;
+            }
+
+            storeAdminToken(token);
+        }
+
         setIsRefreshing(true);
         setRefreshMessage("");
 
         try {
-            const result = await startIngest(filters.market);
+            const result = await startIngest(filters.market, token);
 
-            if (result.status === 409) {
+            if (result.status === 403) {
+                storeAdminToken("");
+                setRefreshMessage("Admin token rejected. Click the logo again to retry.");
+            } else if (result.status === 409) {
                 setRefreshMessage(
                     "A refresh is already running. The list will update when it finishes."
                 );
@@ -326,7 +361,7 @@ export default function Dashboard() {
 
             <header className="nav">
 
-                <div className="brand">
+                <div className="brand" onClick={onLogoClick}>
                     <span
                         className="brand-mark"
                         role="img"
@@ -547,28 +582,30 @@ export default function Dashboard() {
                             onChange={setFilter("hideGhost")}
                         />
 
+                        {adminOpen && (
                         <div className="refresh-row">
-                            <button
-                                className="refresh-button"
-                                onClick={handleRefresh}
-                                disabled={isRefreshing || ingest?.running}
-                            >
-                                {isRefreshing || ingest?.running ? (
-                                    <>
-                                        <span className="spinner" aria-hidden="true" />
-                                        Finding jobs…
-                                    </>
-                                ) : (
-                                    <>
-                                        <IconRefresh />
-                                        Find new jobs
-                                    </>
-                                )}
-                            </button>
-                            <span className="hint">
-                                Jobs also refresh on a schedule. Use this to see new ones now.
-                            </span>
-                        </div>
+                                <button
+                                    className="refresh-button"
+                                    onClick={handleRefresh}
+                                    disabled={isRefreshing || ingest?.running}
+                                >
+                                    {isRefreshing || ingest?.running ? (
+                                        <>
+                                            <span className="spinner" aria-hidden="true" />
+                                            Finding jobs…
+                                        </>
+                                    ) : (
+                                        <>
+                                            <IconRefresh />
+                                            Find new jobs
+                                        </>
+                                    )}
+                                </button>
+                                <span className="hint">
+                                    Jobs also refresh on a schedule. Use this to see new ones now.
+                                </span>
+                            </div>
+                        )}
 
                     </section>
                 )}

@@ -1,4 +1,6 @@
-export const API_URL = "http://localhost:8000";
+// Set VITE_API_URL at build time (e.g. in Vercel); local dev uses the default.
+export const API_URL =
+    import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 // Keep in step with the API's `limit` maximum.
 export const JOB_LIMIT = 600;
