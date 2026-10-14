@@ -407,7 +407,7 @@ def clear_jobs():
         connection.close()
 
 
-def get_daily_postings(days=14):
+def get_daily_postings(days=14, market=None):
     """
     Jobs per posted day for the last `days` days, oldest first.
     Days with no postings are included as zero so the chart has no gaps.
@@ -430,9 +430,10 @@ def get_daily_postings(days=14):
                 FROM jobs
                 WHERE posted_at IS NOT NULL
                 AND posted_at::date >= %s
+                AND (%s::text IS NULL OR %s::text = ANY(markets))
                 GROUP BY 1
                 """,
-                (start,)
+                (start, market, market)
             )
 
             counts = {row[0]: row[1] for row in cursor.fetchall()}
@@ -449,7 +450,7 @@ def get_daily_postings(days=14):
     ]
 
 
-def get_top_skills(limit=3):
+def get_top_skills(limit=3, market=None):
     """Most-mentioned skills across all postings, with posting counts."""
 
     connection = get_connection()
@@ -462,11 +463,12 @@ def get_top_skills(limit=3):
                 """
                 SELECT skill, COUNT(*) AS postings
                 FROM jobs, UNNEST(skills) AS skill
+                WHERE (%s::text IS NULL OR %s::text = ANY(markets))
                 GROUP BY skill
                 ORDER BY postings DESC, skill
                 LIMIT %s
                 """,
-                (limit,)
+                (market, market, limit)
             )
 
             return [

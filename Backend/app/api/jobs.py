@@ -133,16 +133,29 @@ def fit_summary():
     return get_fit_summary()
 
 
+def _check_market(market):
+    if market is not None and market not in {"canada", "usa", "north-america"}:
+        raise HTTPException(status_code=400, detail="Invalid market.")
+
+
 @router.get("/activity")
-def activity(days: int = Query(default=14, ge=1, le=60)):
-    """Jobs posted per day, for the activity chart."""
-    return get_daily_postings(days)
+def activity(
+    days: int = Query(default=14, ge=1, le=60),
+    market: str | None = Query(default=None),
+):
+    """Jobs posted per day in a Country tab, for the activity chart."""
+    _check_market(market)
+    return get_daily_postings(days, market=market)
 
 
 @router.get("/top-skills")
-def top_skills(limit: int = Query(default=3, ge=1, le=500)):
-    """Most-mentioned skills, for the summary cards."""
-    return get_top_skills(limit)
+def top_skills(
+    limit: int = Query(default=3, ge=1, le=500),
+    market: str | None = Query(default=None),
+):
+    """Most-mentioned skills in a Country tab, for the summary cards."""
+    _check_market(market)
+    return get_top_skills(limit, market=market)
 
 
 @router.get("/ingest/status")

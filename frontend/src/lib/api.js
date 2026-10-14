@@ -18,11 +18,11 @@ export async function fetchJobs(market) {
 }
 
 // Chart and skills are extras: if they fail, the list still works.
-export async function fetchSummary() {
+export async function fetchSummary(market) {
     try {
         const [activity, topSkills] = await Promise.all([
-            fetch(`${API_URL}/jobs/activity?days=14`).then((r) => (r.ok ? r.json() : [])),
-            fetch(`${API_URL}/jobs/top-skills?limit=500`).then((r) => (r.ok ? r.json() : [])),
+            fetch(`${API_URL}/jobs/activity?days=14&market=${market}`).then((r) => (r.ok ? r.json() : [])),
+            fetch(`${API_URL}/jobs/top-skills?limit=500&market=${market}`).then((r) => (r.ok ? r.json() : [])),
         ]);
 
         return { activity, topSkills };

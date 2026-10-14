@@ -136,7 +136,7 @@ export default function Dashboard() {
     useEffect(() => {
         let cancelled = false;
 
-        Promise.all([fetchJobs(filters.market), fetchSummary()])
+        Promise.all([fetchJobs(filters.market), fetchSummary(filters.market)])
             .then(([data, summary]) => {
                 if (!cancelled) {
                     setJobs(data);
