@@ -45,6 +45,7 @@ _CA_TERMS = [
     r"montréal", r"ottawa", r"calgary", r"edmonton", r"waterloo", r"kitchener",
     r"richmond hill", r"mississauga", r"winnipeg", r"halifax", r"moncton",
     r"victoria", r"courtenay", r"hamilton", r"markham", r"burlington",
+    r"london, on", r"london, ontario", r"london on",
     r"saskatoon", r"regina", r"oakville", r"guelph", r"burnaby",
     r"surrey", r"kelowna", r"st\.? john'?s", r"fredericton", r"charlottetown",
 ]
@@ -155,3 +156,37 @@ def is_ineligible_location(location: Optional[str]) -> bool:
     """Ineligible for every market we ingest (used for cleanup)."""
 
     return not any(location_eligible(location, m) for m in MARKET_REGIONS)
+
+
+# ============================================================
+# MARKETS A JOB BELONGS TO (stored, and used to filter the list)
+# ============================================================
+
+ALL_MARKETS = ["canada", "usa", "north-america"]
+
+
+def markets_for_location(location: Optional[str]) -> list[str]:
+    """
+    Every market a job is open to, for the Country filter.
+
+    A Canada-only job belongs to Canada and North America. Remote-anywhere
+    or unrecognised locations belong to all three, so nothing is hidden
+    from a tab just because we couldn't place it.
+    """
+
+    if not location:
+        return list(ALL_MARKETS)
+
+    markets = [
+        market
+        for market in ("canada", "usa")
+        if location_eligible(location, market)
+    ]
+
+    if not markets:
+        return []
+
+    if "canada" in markets or "usa" in markets:
+        markets.append("north-america")
+
+    return markets

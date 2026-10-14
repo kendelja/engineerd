@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from app.ingestion.analyzer import analyze_job
+from app.ingestion.eligibility import markets_for_location
 from app.models.job import Job
 
 
@@ -48,6 +49,8 @@ def normalize_job(raw_job: dict) -> Job:
         ),
 
         work_model=work_model,
+
+        markets=markets_for_location(clean_text(raw_job.get("location"))),
 
 
 

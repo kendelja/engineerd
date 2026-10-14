@@ -88,6 +88,10 @@ def _validate_fit_labels(labels: list[str] | None, param: str):
 @router.get("/")
 def jobs(
     limit: int = Query(default=600, ge=1, le=600),
+    market: str | None = Query(
+        default=None,
+        description="Country tab: canada, usa or north-america.",
+    ),
     fit: list[str] | None = Query(
         default=None,
         description="Only these fit labels (repeatable).",
@@ -110,8 +114,12 @@ def jobs(
     _validate_fit_labels(fit, "fit")
     _validate_fit_labels(exclude_fit, "exclude_fit")
 
+    if market is not None and market not in {"canada", "usa", "north-america"}:
+        raise HTTPException(status_code=400, detail="Invalid market.")
+
     return get_jobs(
         limit,
+        market=market,
         fit=fit,
         exclude_fit=exclude_fit,
         max_years=max_years,

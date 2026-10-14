@@ -26,6 +26,7 @@ def insert_job(job: Job):
                     employment_type,
                     remote_type,
                     work_model,
+                    markets,
                     salary_min,
                     salary_max,
                     salary_period,
@@ -42,7 +43,7 @@ def insert_job(job: Job):
                     %s, %s, %s, %s, %s, %s, %s,
                     %s, %s, %s, %s, %s, %s, %s,
                     %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s
+                    %s, %s, %s, %s
                 )
                 ON CONFLICT (source, source_job_id)
                 DO NOTHING
@@ -61,6 +62,7 @@ def insert_job(job: Job):
                     job.employment_type,
                     job.remote_type,
                     job.work_model,
+                    job.markets,
                     job.salary_min,
                     job.salary_max,
                     job.salary_period,
@@ -86,6 +88,7 @@ def get_jobs(
     exclude_fit=None,
     max_years=None,
     skills=None,
+    market=None,
 ):
     """
     Return jobs, newest first.
@@ -99,6 +102,10 @@ def get_jobs(
 
     conditions = []
     params = []
+
+    if market:
+        conditions.append("%s = ANY(markets)")
+        params.append(market)
 
     if fit:
         conditions.append("fit_label = ANY(%s)")

@@ -26,6 +26,9 @@ class Job:
     salary_max: Optional[float]
     salary_period: Optional[str]
 
+    # Country tabs this job appears under (see eligibility.markets_for_location)
+    markets: list[str] = field(default_factory=list)
+
     # "Remote" | "Hybrid" | "On-site" | None (unknown)
     work_model: Optional[str] = None
 
