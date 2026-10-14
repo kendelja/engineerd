@@ -1,4 +1,5 @@
-// Set VITE_API_URL at build time (e.g. in Vercel); local dev uses the default.
+// Set API_URL at build time (e.g. in Vercel); local dev uses the default.
+// vite.config.js maps it to import.meta.env.VITE_API_URL.
 export const API_URL =
     import.meta.env.VITE_API_URL || "http://localhost:8000";
 
