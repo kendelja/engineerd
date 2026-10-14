@@ -136,7 +136,7 @@ export default function Dashboard() {
     useEffect(() => {
         let cancelled = false;
 
-        Promise.all([fetchJobs(), fetchSummary()])
+        Promise.all([fetchJobs(filters.market), fetchSummary()])
             .then(([data, summary]) => {
                 if (!cancelled) {
                     setJobs(data);
@@ -156,7 +156,7 @@ export default function Dashboard() {
         return () => {
             cancelled = true;
         };
-    }, [dataVersion]);
+    }, [dataVersion, filters.market]);
 
     // Keeps the "updated" line current, and reloads the list when a
     // scheduled refresh finishes while the page is open.

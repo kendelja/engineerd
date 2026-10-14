@@ -5,8 +5,10 @@ import { API_URL, JOB_LIMIT } from "./jobs";
 export const STATUS_POLL_MS = 60000;
 
 
-export async function fetchJobs() {
-    const response = await fetch(`${API_URL}/jobs/?limit=${JOB_LIMIT}`);
+export async function fetchJobs(market) {
+    const response = await fetch(
+        `${API_URL}/jobs/?limit=${JOB_LIMIT}&market=${market}`
+    );
 
     if (!response.ok) {
         throw new Error("Failed to fetch jobs");
