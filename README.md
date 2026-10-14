@@ -6,11 +6,14 @@
 Engineerd collects software job postings from several job boards and shows what each one **really** asks for. Job boards label almost everything "junior", so Engineerd opens each posting, reads the years of experience it requires, and labels it honestly, from entry-level to senior+.
 
 **Live demo:** https://engineerd.vercel.app
-**Video walkthrough:** [Watch the demo](https://github.com/kendelja/engineerd/blob/main/EngineerdDemoVideo.mp4)
 
-<p align="center">
+**Video walkthrough:** 
+
+https://github.com/user-attachments/assets/36a6b611-0739-4314-a85e-bcfa93c1bf6a
+
+<!-- <p align="center">
   <img src="./EngineerdDemo.png" width="1000">
-</p>
+</p> -->
 
 ## What it does
 
