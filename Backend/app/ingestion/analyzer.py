@@ -118,6 +118,22 @@ _CLAUSE_BREAK = ".;\n•"
 _MAX_PLAUSIBLE_YEARS = 15
 
 
+# "Minimum 2 years" is a hard floor even when a parenthetical follows it:
+# "Minimum 2 years (ideally targeted around 2 to 4 years) of ..." needs 2.
+_HARD_CUE_RE = re.compile(
+    r"\b(?:minimum|at least|min\.?|must have|required)\s+(?:of\s+)?$",
+    re.IGNORECASE,
+)
+
+_LEADING_ASIDE_RE = re.compile(r"^\s*\([^)]*\)")
+
+# A parenthetical that only says the years are optional is still soft.
+_SOFT_ASIDE_RE = re.compile(
+    r"^\s*\(\s*(?:preferred|nice to have|a plus|bonus|optional|desired)\s*\)",
+    re.IGNORECASE,
+)
+
+
 def _to_int(token: Optional[str]) -> Optional[int]:
     if token is None:
         return None
@@ -174,6 +190,14 @@ def extract_years_required(
         # ("10 years or more of distributed and cloud-native software
         # engineering experience"), so look further for that.
         after_long = _clause_after(text, match.end(), 130)
+
+        if _HARD_CUE_RE.search(before):
+            if _SOFT_ASIDE_RE.match(after_long):
+                continue
+            aside = _LEADING_ASIDE_RE.match(after_long)
+            if aside:
+                after_long = after_long[aside.end():]
+
         after = after_long[:60]
 
         if _HEAD_REJECT_RE.search(before):

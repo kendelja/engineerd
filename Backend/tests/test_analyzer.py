@@ -233,3 +233,17 @@ def test_more_years_never_raises_the_score():
     ]
 
     assert scores == sorted(scores, reverse=True)
+
+
+def test_minimum_years_with_parenthetical_aside_is_a_hard_floor():
+    text = (
+        "Experience and skills: Minimum 2 years (ideally targeted around "
+        "2 to around 4 years) of full-stack development experience."
+    )
+    years, _ = extract_years_required(text)
+    assert years == 2
+
+
+def test_minimum_years_marked_preferred_stays_ignored():
+    years, _ = extract_years_required("Minimum 2 years (preferred) of experience")
+    assert years is None
