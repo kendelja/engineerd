@@ -22,6 +22,8 @@ from app.ingestion.parsers.SimplifyJobsParser import SimplifyJobsParser
 from app.ingestion.config import build_simplifyjobs_filter
 
 from scripts.enrichJobs import enrich
+from scripts.pruneOldJobs import prune
+from app.database.connection import get_connection
 
 
 # Stored jobs whose detail page is still unread are retried at the end of
@@ -93,6 +95,17 @@ async def main(market="canada"):
         await enrich(limit=DETAIL_RETRIES_PER_SOURCE)
     except Exception as error:
         print(f"Reading pending detail pages failed: {error}")
+
+    # Drop stored jobs that have aged out of the ingestion window.
+    try:
+        connection = get_connection()
+        try:
+            pruned = prune(connection, apply=True)
+            print(f"Pruned {pruned} jobs older than the ingestion window.")
+        finally:
+            connection.close()
+    except Exception as error:
+        print(f"Pruning old jobs failed: {error}")
 
     return total
 
