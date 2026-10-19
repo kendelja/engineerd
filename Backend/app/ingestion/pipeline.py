@@ -119,6 +119,6 @@ async def run_pipeline(scraper, parser, source_name, detail_fetcher=None, market
     print(f"Skipped:  {skipped}")
     print(f"Invalid:  {invalid}")
     print(f"Expired:  {expired}")
-    print(f"Excluded: {excluded}  (interns, co-ops, other markets)")
+    print(f"Excluded: {excluded}  (non-software titles, other markets)")
 
     return inserted

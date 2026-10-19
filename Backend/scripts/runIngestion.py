@@ -21,6 +21,13 @@ from app.ingestion.parsers.SimplifyJobsParser import SimplifyJobsParser
 
 from app.ingestion.config import build_simplifyjobs_filter
 
+from scripts.enrichJobs import enrich
+
+
+# Stored jobs whose detail page is still unread are retried at the end of
+# every run, up to this many per source. Each read takes a few seconds.
+DETAIL_RETRIES_PER_SOURCE = 150
+
 
 async def main(market="canada"):
     total = 0
@@ -78,6 +85,14 @@ async def main(market="canada"):
         detail_fetcher=fetcher_for("SimplifyJobs"),
         market=market,
     )
+
+    # Jobs stored before their detail page was read (or whose read failed
+    # earlier) are never revisited by the pipeline, so read them here.
+    # A failure must not undo the inserts above.
+    try:
+        await enrich(limit=DETAIL_RETRIES_PER_SOURCE)
+    except Exception as error:
+        print(f"Reading pending detail pages failed: {error}")
 
     return total
 

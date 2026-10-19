@@ -3,7 +3,10 @@ Which jobs are worth keeping, regardless of source.
 
 Two checks, both applied in the pipeline before anything is stored:
 
-1. Title: interns and co-ops are never shown.
+1. Title: interns, co-ops, students and non-software engineering roles
+   (mechanical, materials, photonics, hardware...) are never shown. These
+   are matched by discipline, so a new posting in one of those fields is
+   caught without adding its exact title anywhere.
 2. Location: a job must be open to the market being ingested. A role
    whose location is only a country outside Canada / the US (e.g.
    "Brazil") is dropped for every market.
@@ -22,13 +25,54 @@ from typing import Optional
 
 _EXCLUDED_TITLE_RE = re.compile(
     r"\b(?:intern|interns|internship|internships|"
-    r"co-?op|co-?ops|coop)\b",
+    r"co-?op|co-?ops|coop|students?)\b",
+    re.IGNORECASE,
+)
+
+# Engineering disciplines that are not software. Matched anywhere in the
+# title, so "Engineer I, Mechanical (R6302)" and "Photonics Integration
+# Engineer, MTS" are both caught.
+_NON_SOFTWARE_DISCIPLINE_RE = re.compile(
+    r"\b(?:mechanical|electrical|electronics?|civil|chemical|aerospace|"
+    r"structural|industrial|manufacturing|materials?|photonics?|optics?|"
+    r"optical|mechatronics?|hardware|semiconductor|fab|process|quality|"
+    r"facilities|controls|thermal|propulsion|avionics|battery|rf|antenna|"
+    r"laboratory|lab|toolmaker|tool\s*(?:&|and)\s*die|machinist)\b",
+    re.IGNORECASE,
+)
+
+# A software term rescues a title that also names a discipline:
+# "Robotics Software Engineer, Hardware Platform" is still software.
+_SOFTWARE_TERM_RE = re.compile(
+    r"\b(?:software|developer|programmer|full[- ]?stack|front[- ]?end|"
+    r"back[- ]?end|devops|sre|data|machine learning|ai|ml|cloud|web|"
+    r"mobile|test automation)\b",
+    re.IGNORECASE,
+)
+
+# Non-software IT and language-QA roles, which are not discipline words.
+_NON_SOFTWARE_ROLE_RE = re.compile(
+    r"\b(?:systems? administrator|network administrator|"
+    r"wireless networking tester|networking tester|"
+    r"lqa analyst|linguistic quality assurance|language quality assurance|"
+    r"quality assurance linguistique|testeur réseautique)\b",
     re.IGNORECASE,
 )
 
 
 def is_excluded_title(title: Optional[str]) -> bool:
-    return bool(title and _EXCLUDED_TITLE_RE.search(title))
+    """True for interns, co-ops, students and non-software engineering roles."""
+
+    if not title:
+        return False
+
+    if _EXCLUDED_TITLE_RE.search(title) or _NON_SOFTWARE_ROLE_RE.search(title):
+        return True
+
+    return bool(
+        _NON_SOFTWARE_DISCIPLINE_RE.search(title)
+        and not _SOFTWARE_TERM_RE.search(title)
+    )
 
 
 # ============================================================

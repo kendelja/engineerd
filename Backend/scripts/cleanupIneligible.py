@@ -1,6 +1,7 @@
 """
 Remove stored jobs that the eligibility rules would now reject:
-interns / co-ops, and locations open to neither Canada nor the US.
+interns, co-ops, students, non-software engineering titles, and
+locations open to neither Canada nor the US.
 
 Run from the Backend folder:
 
@@ -37,7 +38,7 @@ def main():
 
         for job_id, source, title, company, location in rows:
             if is_excluded_title(title):
-                doomed.append((job_id, "intern/co-op", source, title, company, location))
+                doomed.append((job_id, "title", source, title, company, location))
             elif is_ineligible_location(location):
                 doomed.append((job_id, "location", source, title, company, location))
 

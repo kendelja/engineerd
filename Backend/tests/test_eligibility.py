@@ -26,6 +26,43 @@ def test_interns_and_coops_excluded(title):
 @pytest.mark.parametrize(
     "title",
     [
+        # Non-software disciplines seen in Built In results.
+        "Engineer I, Mechanical (R6302)",
+        "Material Science Engineer I",
+        "Photonics Integration Engineer, MTS",
+        "Design Release Engineer - Mechatronics Hardware",
+        "Controls Hardware Engineer",
+        "Semiconductor Equipment Applications Eng",
+        "Facilities Engineer - Northbrook",
+        "Laboratory Engineer",
+        "Systems Administrator",
+        "Engineering Student",
+        "Quality Assurance Linguistique",
+    ],
+)
+def test_non_software_titles_excluded(title):
+    assert is_excluded_title(title)
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Robotics Software Engineer, Hardware Platform",  # software wins
+        "Data Quality Engineer",
+        "Machine Learning Engineer, Materials Discovery",
+        "Full Stack Software Engineer (Cloud based Application)",
+        "Staff Software Developer - 26408",
+        "Material UI Frontend Developer",  # "material" is not the discipline
+        "Studentship Platform Engineer",  # "student" inside a word
+    ],
+)
+def test_software_titles_with_discipline_words_kept(title):
+    assert not is_excluded_title(title)
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
         "Software Engineer",
         "International Software Engineer",  # "intern" inside a word
         "Cooperative Platform Engineer",  # "co-op" inside a word

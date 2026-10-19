@@ -107,45 +107,9 @@ class BuiltInParser:
 
         title_lower = title.lower()
 
-        # Roles outside the software-development scope of Engineerd.
-        excluded_title_terms = [
-            # Manufacturing, trades, and non-software engineering
-            "toolmaker",
-            "tool & die",
-            "tool and die",
-            "manufacturing engineer",
-            "manufacturing process engineer",
-            "mechanical engineer",
-            "electrical engineer",
-            "civil engineer",
-            "industrial engineer",
-            "quality engineer",
-            "process engineer",
-            "chemical engineer",
-            "automotive engineer",
-            "aerospace engineer",
-            "structural engineer",
-
-            # IT operations and infrastructure roles
-            "systems administrator",
-            "system administrator",
-            "network administrator",
-            "networking tester",
-            "wireless networking tester",
-            "testeur réseautique",
-
-            # Language-specific QA, rather than software QA
-            "lqa analyst",
-            "linguistic quality assurance",
-            "language quality assurance",
-            "quality assurance linguistique",
-
-            # Misc
-            "Co-op" #TODO Still shows so need to fix this 
-        ]
-
-        if any(term in title_lower for term in excluded_title_terms):
-            return False
+        # Non-software roles (mechanical, materials, photonics, interns,
+        # students...) are dropped in eligibility.is_excluded_title, which
+        # runs for every source in the pipeline.
 
         # Built In can include higher-level roles in its junior feed.
         # Keep Software Engineer II for now, but reject explicit Level 4+.
