@@ -20,6 +20,7 @@ from typing import Optional
 # ============================================================
 
 JUNIOR_FRIENDLY = "junior-friendly"
+JUNIOR_UNCONFIRMED = "junior-unconfirmed"  # junior-tagged, but the posting or pay says otherwise
 STRETCH = "stretch"
 GHOST_JUNIOR = "ghost-junior"
 SENIOR = "senior"
@@ -28,6 +29,7 @@ UNCLEAR = "unclear"
 
 FIT_LABELS = {
     JUNIOR_FRIENDLY,
+    JUNIOR_UNCONFIRMED,
     STRETCH,
     GHOST_JUNIOR,
     SENIOR,
@@ -397,11 +399,27 @@ def extract_skills(*texts: Optional[str], limit: int = 12) -> list[str]:
 # JUNIOR-FIT
 # ============================================================
 
+# A junior-tagged role whose pay starts at or above this is treated as
+# senior-range pay, or whose pay range tops out at SENIOR_PAY_TOP or more.
+# Applies only when the posting states no years.
+SENIOR_PAY_FLOOR = 120_000
+SENIOR_PAY_TOP = 200_000
+
+# Titles that say the role is entry-level. High pay on these is normal
+# for new grad and associate roles, so the pay rule does not apply.
+_ENTRY_TITLE_RE = re.compile(
+    r"\b(?:new grad|new graduate|associate|junior|jr|entry|early career|intern)\b",
+    re.IGNORECASE,
+)
+
+
 def analyze_job(
     title: Optional[str],
     description: Optional[str],
     experience_level: Optional[str] = None,
     years_required: Optional[int] = None,
+    salary_min: Optional[float] = None,
+    salary_max: Optional[float] = None,
 ) -> JobAnalysis:
     """
     years_required -- a structured value from the source (e.g. a
@@ -449,7 +467,7 @@ def analyze_job(
         )
 
         if years is not None:
-            reasons.append(f"Asks for {years}+ years")
+            reasons.append(f"Asks for {years} years")
 
     elif labelled_junior:
         reasons.append(
@@ -460,13 +478,25 @@ def analyze_job(
         if years is not None and years >= 3:
             label = GHOST_JUNIOR
             reasons.append(
-                f"Labelled junior but asks for {years}+ years"
+                f"Labelled junior but asks for {years} years"
             )
         elif years is not None:
             label = JUNIOR_FRIENDLY
             reasons.append(
-                f"Asks for {years}+ years"
+                f"Asks for {years} years"
                 if years else "No experience required"
+            )
+        elif (
+            (
+                (salary_min is not None and salary_min >= SENIOR_PAY_FLOOR)
+                or (salary_max is not None and salary_max >= SENIOR_PAY_TOP)
+            )
+            and not _ENTRY_TITLE_RE.search(title)
+        ):
+            label = JUNIOR_UNCONFIRMED
+            reasons.append(
+                "Labelled junior, but the pay is in the senior range "
+                "and no years are listed"
             )
         elif has_text:
             label = JUNIOR_FRIENDLY
@@ -485,14 +515,14 @@ def analyze_job(
             label = STRETCH if labelled_mid else UNCLEAR
         elif years >= 5:
             label = SENIOR
-            reasons.append(f"Asks for {years}+ years")
+            reasons.append(f"Asks for {years} years")
         elif years >= 3:
             label = STRETCH
-            reasons.append(f"Asks for {years}+ years")
+            reasons.append(f"Asks for {years} years")
         else:
             label = STRETCH if labelled_mid else JUNIOR_FRIENDLY
             reasons.append(
-                f"Asks for {years}+ years"
+                f"Asks for {years} years"
                 if years else "No experience required"
             )
 

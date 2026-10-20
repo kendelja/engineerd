@@ -16,6 +16,8 @@ def normalize_job(raw_job: dict) -> Job:
         description,
         experience_level,
         years_required=raw_job.get("years_required"),
+        salary_min=raw_job.get("salary_min"),
+        salary_max=raw_job.get("salary_max"),
     )
 
     work_model = parse_work_model(raw_job)

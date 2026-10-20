@@ -55,7 +55,7 @@ def main():
     try:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT id, title, description, experience_level FROM jobs "
+                "SELECT id, title, description, experience_level, salary_min, salary_max FROM jobs "
                 "WHERE detail_checked_at IS NULL"
             )
             rows = cursor.fetchall()
@@ -66,8 +66,11 @@ def main():
     labels = Counter()
     with_years = 0
 
-    for job_id, title, description, experience_level in rows:
-        analysis = analyze_job(title, description, experience_level)
+    for job_id, title, description, experience_level, salary_min, salary_max in rows:
+        analysis = analyze_job(
+            title, description, experience_level,
+            salary_min=salary_min, salary_max=salary_max,
+        )
 
         update_job_analysis(job_id, analysis)
 

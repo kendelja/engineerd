@@ -22,7 +22,7 @@ export default function ExperienceMeter({ years }) {
     const label =
         years === 0
             ? "No experience required"
-            : `Asks ${years}+ yrs`;
+            : `Asks ${years} yrs`;
 
     return (
         <div className={`meter meter-${tone}`} title={label}>

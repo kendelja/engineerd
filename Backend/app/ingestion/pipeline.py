@@ -99,7 +99,13 @@ async def run_pipeline(scraper, parser, source_name, detail_fetcher=None, market
 
             apply_analysis(
                 job,
-                analyze_job(job.title, text, job.experience_level),
+                analyze_job(
+                    job.title,
+                    text,
+                    job.experience_level,
+                    salary_min=job.salary_min,
+                    salary_max=job.salary_max,
+                ),
             )
             job.detail_checked_at = datetime.now()
             enriched += 1

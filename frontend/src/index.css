@@ -722,6 +722,7 @@ p {
 
 .spine-junior-friendly { --spine: var(--good); }
 .spine-ghost-junior    { --spine: var(--bad); }
+.spine-junior-unconfirmed { --spine: var(--good); border-left-style: dashed; }
 .spine-stretch         { --spine: var(--mid); }
 .spine-senior          { --spine: var(--slate); }
 .spine-unverified      { --spine: var(--line); }
@@ -901,6 +902,11 @@ p {
 
 .fit-junior-friendly { background: var(--good-soft); color: var(--good); }
 .fit-ghost-junior    { background: var(--bad-soft);  color: var(--bad); }
+.fit-junior-unconfirmed {
+    background: transparent;
+    color: var(--good);
+    border: 1px dashed var(--good);
+}
 .fit-stretch         { background: var(--mid-soft);  color: var(--mid); }
 .fit-senior          { background: var(--slate-soft); color: var(--slate); }
 .fit-unclear         { background: var(--slate-soft); color: var(--muted); }

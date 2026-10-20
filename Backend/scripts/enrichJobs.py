@@ -59,7 +59,13 @@ async def enrich(source=None, limit=None, include_checked=False):
                 failed += 1
                 continue
 
-            analysis = analyze_job(job.title, text, job.experience_level)
+            analysis = analyze_job(
+                job.title,
+                text,
+                job.experience_level,
+                salary_min=job.salary_min,
+                salary_max=job.salary_max,
+            )
 
             update_job_analysis(job.id, analysis, detail_checked=True)
 

@@ -21,7 +21,7 @@ router = APIRouter(prefix="/jobs", tags=["Jobs"])
 # Unfiltered list: junior-tagged roles get their own slots, so a flood of
 # senior roles can't push them out of the window. Senior and every other
 # label share the rest, up to SENIOR_MAX.
-JUNIOR_FITS = ["junior-friendly", "ghost-junior"]
+JUNIOR_FITS = ["junior-friendly", "junior-unconfirmed", "ghost-junior"]
 JUNIOR_SLOTS = 200
 SENIOR_MAX = 400
 

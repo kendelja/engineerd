@@ -374,7 +374,7 @@ def get_pending_detail_jobs(
             cursor.execute(
                 f"""
                 SELECT id, source, source_job_id, url, title,
-                       experience_level
+                       experience_level, salary_min, salary_max
                 FROM jobs
                 WHERE {" AND ".join(conditions)}
                 ORDER BY posted_at DESC NULLS LAST, id DESC

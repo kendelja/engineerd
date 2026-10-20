@@ -247,3 +247,55 @@ def test_minimum_years_with_parenthetical_aside_is_a_hard_floor():
 def test_minimum_years_marked_preferred_stays_ignored():
     years, _ = extract_years_required("Minimum 2 years (preferred) of experience")
     assert years is None
+
+
+def test_junior_tag_with_senior_pay_and_no_years_is_unconfirmed():
+    text = (
+        "We are looking for an engineer to join our team and build "
+        "systems that scale. You will design, build and ship features."
+    )
+    result = analyze_job("Quantitative Research Engineer", text, "Entry level", salary_min=275000)
+    assert result.fit_label == "junior-unconfirmed"
+
+
+def test_junior_tag_with_normal_pay_stays_junior_friendly():
+    text = (
+        "We are looking for an engineer to join our team and build "
+        "systems that scale. You will design, build and ship features."
+    )
+    result = analyze_job("Software Engineer", text, "Entry level", salary_min=65000)
+    assert result.fit_label == "junior-friendly"
+
+
+def test_entry_title_with_high_pay_is_not_flagged():
+    text = (
+        "We are looking for an engineer to join our team and build "
+        "systems that scale. You will design, build and ship features."
+    )
+    result = analyze_job("Software Engineer, New Grad", text, "Entry level", salary_min=145000)
+    assert result.fit_label == "junior-friendly"
+
+
+def test_wide_pay_range_topping_senior_pay_is_unconfirmed():
+    text = (
+        "We are looking for an engineer to join our team and build "
+        "systems that scale. You will design, build and ship features."
+    )
+    result = analyze_job(
+        "Site Reliability Engineer", text, "Entry level",
+        salary_min=105000, salary_max=300000,
+    )
+    assert result.fit_label == "junior-unconfirmed"
+
+
+def test_modest_pay_range_stays_junior_friendly():
+    text = (
+        "We are looking for an engineer to join our team and build "
+        "systems that scale. You will design, build and ship features."
+    )
+    result = analyze_job(
+        "Software Engineer II", text, "Entry level",
+        salary_min=100000, salary_max=150000,
+    )
+    assert result.fit_label == "junior-friendly"
+

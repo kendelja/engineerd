@@ -20,6 +20,10 @@ export const FIT_INFO = {
         label: "Junior-friendly",
         help: "Entry-level, and asks for 0-2 years of experience.",
     },
+    "junior-unconfirmed": {
+        label: "Junior-Unconfirmed",
+        help: "The job board tags this role as junior, but the posting doesn't back that up. Read the details before you apply.",
+    },
     "ghost-junior": {
         label: "Ghost junior",
         help: "Labelled junior or entry-level, but the posting actually asks for 3+ years of experience.",
@@ -44,6 +48,7 @@ export const FIT_INFO = {
 
 export const LEGEND_ORDER = [
     "junior-friendly",
+    "junior-unconfirmed",
     "ghost-junior",
     "stretch",
     "senior",
@@ -103,6 +108,7 @@ export function matchesExperience(job, experience) {
     const seniorFit = job.fit_label === "senior";
     const juniorFit =
         job.fit_label === "junior-friendly" ||
+        job.fit_label === "junior-unconfirmed" ||
         job.fit_label === "ghost-junior";
 
     const taggedJunior =
