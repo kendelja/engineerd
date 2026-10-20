@@ -115,6 +115,7 @@ export default function Dashboard() {
     const [showSaved, setShowSaved] = useState(false);
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [legendOpen, setLegendOpen] = useState(false);
+    const [applyOpen, setApplyOpen] = useState(false);
 
     const [savedIds, setSavedIds] = useState(loadSavedIds);
 
@@ -617,15 +618,47 @@ export default function Dashboard() {
                         {showSaved ? "saved" : "matching"} {visibleJobs.length === 1 ? "job" : "jobs"}
                     </span>
 
-                    <button
-                        className="text-button legend-toggle"
-                        onClick={() => setLegendOpen((open) => !open)}
-                        aria-expanded={legendOpen}
-                    >
-                        What do the labels mean?
-                    </button>
+                    <div className="meta-actions">
+                        <button
+                            className="text-button legend-toggle"
+                            onClick={() => setApplyOpen((open) => !open)}
+                            aria-expanded={applyOpen}
+                        >
+                            How to apply
+                        </button>
+
+                        <button
+                            className="text-button legend-toggle"
+                            onClick={() => setLegendOpen((open) => !open)}
+                            aria-expanded={legendOpen}
+                        >
+                            What do the labels mean?
+                        </button>
+                    </div>
 
                 </div>
+
+                {applyOpen && (
+                    <section className="legend apply-help" aria-label="How to apply">
+                        <p>
+                            My recommendation, as the developer of Engineerd:
+                        </p>
+                        <ul className="apply-steps">
+                            <li>
+                                Create a free account on Built In or Wellfound,
+                                then apply to the company from there. Both sites
+                                ask you to sign in before they show the
+                                application.
+                            </li>
+                            <li>
+                                Or search the company name on Google, find its
+                                careers page, and apply on the company's own
+                                site. Use the job title and location from the
+                                Engineerd card to find the same posting.
+                            </li>
+                        </ul>
+                    </section>
+                )}
 
                 {legendOpen && (
                     <section className="legend" aria-label="What the labels mean">

@@ -1,6 +1,8 @@
 import os
 import secrets
 
+from datetime import datetime
+
 from fastapi import APIRouter, Header, HTTPException, Query
 
 from app.database.repositories import (
@@ -15,6 +17,13 @@ from app.ingestion.runner import IngestionBusy, get_ingest_status, run_ingestion
 from app.scheduler import next_run_at
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
+
+# Unfiltered list: junior-tagged roles get their own slots, so a flood of
+# senior roles can't push them out of the window. Senior and every other
+# label share the rest, up to SENIOR_MAX.
+JUNIOR_FITS = ["junior-friendly", "ghost-junior"]
+JUNIOR_SLOTS = 200
+SENIOR_MAX = 400
 
 
 @router.post("/ingest")
@@ -116,6 +125,29 @@ def jobs(
 
     if market is not None and market not in {"canada", "usa", "north-america"}:
         raise HTTPException(status_code=400, detail="Invalid market.")
+
+    if fit is None and exclude_fit is None:
+        junior = get_jobs(
+            min(JUNIOR_SLOTS, limit),
+            market=market,
+            fit=JUNIOR_FITS,
+            max_years=max_years,
+            skills=skill,
+        )
+
+        others = get_jobs(
+            min(SENIOR_MAX, limit - len(junior)),
+            market=market,
+            exclude_fit=JUNIOR_FITS,
+            max_years=max_years,
+            skills=skill,
+        )
+
+        return sorted(
+            junior + others,
+            key=lambda job: job["posted_at"] or datetime.min,
+            reverse=True,
+        )
 
     return get_jobs(
         limit,
