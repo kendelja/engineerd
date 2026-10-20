@@ -616,6 +616,14 @@ p {
     gap: 16px;
 }
 
+.apply-title {
+    margin: 0;
+
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 700;
+}
+
 .apply-steps {
     display: grid;
     gap: 12px;

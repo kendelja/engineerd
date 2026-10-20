@@ -624,7 +624,7 @@ export default function Dashboard() {
                             onClick={() => setApplyOpen((open) => !open)}
                             aria-expanded={applyOpen}
                         >
-                            How to apply
+                            Applying on Built In &amp; Wellfound
                         </button>
 
                         <button
@@ -639,10 +639,8 @@ export default function Dashboard() {
                 </div>
 
                 {applyOpen && (
-                    <section className="legend apply-help" aria-label="How to apply">
-                        <p>
-                            My recommendation, as the developer of Engineerd:
-                        </p>
+                    <section className="legend apply-help" aria-label="Applying on Built In and Wellfound">
+                        <h3 className="apply-title">Applying on Built In &amp; Wellfound</h3>
                         <ul className="apply-steps">
                             <li>
                                 Create a free account on Built In or Wellfound,
