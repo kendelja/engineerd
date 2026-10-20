@@ -282,9 +282,19 @@ export default function Dashboard() {
 
     function toggleTheme() {
         const next = isDark ? "light" : "dark";
+        const root = document.documentElement;
+
+        // Switch every colour in one frame: the per-card fades are off
+        // until the new theme has painted.
+        root.classList.add("theme-switching");
+        root.dataset.theme = next;
 
         storeTheme(next);
         setTheme(next);
+
+        requestAnimationFrame(() =>
+            requestAnimationFrame(() => root.classList.remove("theme-switching"))
+        );
     }
 
 

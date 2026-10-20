@@ -39,6 +39,12 @@
     --shadow-lift: 0 2px 4px rgba(22, 24, 29, 0.05), 0 16px 36px rgba(22, 24, 29, 0.09);
 }
 
+/* Set only for the instant of a theme switch, so colours change together. */
+.theme-switching,
+.theme-switching * {
+    transition: none !important;
+}
+
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
         --paper: #121317;
