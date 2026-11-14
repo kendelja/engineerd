@@ -29,6 +29,7 @@ jobs:
         working-directory: Backend
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SIMPLIFYJOBS_API_KEY: ${{ secrets.SIMPLIFYJOBS_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
