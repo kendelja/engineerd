@@ -12,7 +12,7 @@ def test_defaults(monkeypatch):
 
     enabled, hours, markets, timezone = scheduler._config()
 
-    assert enabled is True
+    assert enabled is False
     assert hours == [0, 6, 12, 18]
     assert markets == ["canada"]
     assert timezone.key == "America/Toronto"

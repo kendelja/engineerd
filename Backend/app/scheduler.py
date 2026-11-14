@@ -4,7 +4,8 @@ Scheduled ingestion.
 Runs inside the API process, so the schedule only fires while the API
 is running. Configure with environment variables (all optional):
 
-    INGEST_SCHEDULE_ENABLED   "1" (default) or "0" to turn it off
+    INGEST_SCHEDULE_ENABLED   "1" to run here, default "0"; refreshes now run
+                              on GitHub Actions (see .github/workflows/ingest.yml)
     INGEST_HOURS              hours of the day, default "0,6,12,18"
     INGEST_MARKETS            comma-separated, default "canada"
     INGEST_TIMEZONE           default "America/Toronto"
@@ -28,7 +29,7 @@ DEFAULT_TIMEZONE = "America/Toronto"
 
 
 def _config():
-    enabled = os.getenv("INGEST_SCHEDULE_ENABLED", "1").strip().lower() not in (
+    enabled = os.getenv("INGEST_SCHEDULE_ENABLED", "0").strip().lower() not in (
         "0", "false", "no", "off", "",
     )
 

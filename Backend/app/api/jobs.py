@@ -41,6 +41,15 @@ async def ingest_jobs(
     if not secrets.compare_digest(x_admin_token or "", expected_token):
         raise HTTPException(status_code=403, detail="Admin token rejected.")
 
+    # Refreshes run on GitHub Actions now, not inside the API process.
+    raise HTTPException(
+        status_code=503,
+        detail=(
+            "Manual refresh now runs on GitHub Actions. Start the "
+            "'Ingest jobs' workflow from the repo's Actions tab."
+        ),
+    )
+
     valid_markets = {"canada", "usa", "north-america"}
     #valid_experience = {"all", "junior", "senior"}
 
